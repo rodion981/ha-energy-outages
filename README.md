@@ -14,7 +14,6 @@
 - binary sensor «Відключення зараз»;
 - сирі погодинні коди й обчислені періоди в атрибутах;
 - автоматичне оновлення даних кожні 60 секунд;
-- одночасна робота з інтеграцією [`denysdovhan/ha-yasno-outages`](https://github.com/denysdovhan/ha-yasno-outages).
 
 Внутрішній domain інтеграції: `alerts_energy_outages`.
 
@@ -66,18 +65,17 @@ Home Assistant формує entity ID із назви config entry та назв
 
 ## Перехід із v2.0.x
 
-Версії `v2.0.1–v2.0.2` помилково використовували domain `yasno_outages`, який належить іншій інтеграції. Через це Home Assistant міг змішувати config entries та показувати помилку міграції.
+Версії `v2.0.1–v2.0.2` помилково використовували застарілий domain `yasno_outages`. Через це Home Assistant міг змішувати config entries та показувати помилку міграції.
 
 Для переходу на `v2.1.0` або новішу версію:
 
-1. У **Settings → Devices & services** видаліть лише config entry **Alerts Energy**. Не видаляйте потрібні записи оригінальної інтеграції Yasno.
+1. У **Settings → Devices & services** видаліть config entry **Alerts Energy**.
 2. Видаліть стару версію **Alerts Energy Outages** у HACS.
 3. Перезапустіть Home Assistant.
-4. Якщо використовуєте `denysdovhan/ha-yasno-outages`, перевстановіть її в HACS, щоб відновити `custom_components/yasno_outages`.
-5. Встановіть актуальну версію **Alerts Energy Outages**.
-6. Знову перезапустіть Home Assistant і додайте інтеграцію заново.
+4. Встановіть актуальну версію **Alerts Energy Outages**.
+5. Знову перезапустіть Home Assistant і додайте інтеграцію заново.
 
-Починаючи з `v2.1.0`, використовується окрема папка `custom_components/alerts_energy_outages`, тому обидві інтеграції можуть працювати паралельно.
+Починаючи з `v2.1.0`, використовується окрема папка `custom_components/alerts_energy_outages`.
 
 ## Як це працює
 
