@@ -3,9 +3,9 @@
   "name": "Alerts Energy Outages",
   "codeowners": ["@rodion981"],
   "config_flow": true,
-  "documentation": "https://github.com/rodion981/homeassistant-yasno-outages",
+  "documentation": "https://github.com/rodion981/ha-energy-outages",
   "integration_type": "service",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/rodion981/homeassistant-yasno-outages/issues",
+  "issue_tracker": "https://github.com/rodion981/ha-energy-outages/issues",
   "version": "2.1.1"
 }
