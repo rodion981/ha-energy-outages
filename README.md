@@ -25,7 +25,7 @@
 3. Додайте репозиторій:
 
    ```text
-   https://github.com/rodion981/homeassistant-yasno-outages
+   https://github.com/rodion981/ha-yasno-outages
    ```
 
    Тип: **Integration**.
