@@ -1,6 +1,6 @@
 # ⚡ Alerts Energy Outages для Home Assistant
 
-[![release](https://img.shields.io/github/v/release/rodion981/homeassistant-yasno-outages?display_name=tag&sort=semver)](https://github.com/rodion981/homeassistant-yasno-outages/releases)
+[![release](https://img.shields.io/github/v/release/rodion981/ha-energy-outages?display_name=tag&sort=semver)](https://github.com/rodion981/ha-energy-outages/releases)
 ![hacs](https://img.shields.io/badge/HACS-Custom-orange)
 [![patreon](https://img.shields.io/badge/support-patreon-ff424d)](https://www.patreon.com/c/Rodion_Kurylenko)
 
@@ -25,7 +25,7 @@
 3. Додайте репозиторій:
 
    ```text
-   https://github.com/rodion981/ha-yasno-outages
+   https://github.com/rodion981/ha-energy-outages
    ```
 
    Тип: **Integration**.
@@ -115,6 +115,6 @@ includes/packages/energyua_22.yaml
 
 ## Підтримка
 
-Про помилки та пропозиції повідомляйте через [GitHub Issues](https://github.com/rodion981/homeassistant-yasno-outages/issues).
+Про помилки та пропозиції повідомляйте через [GitHub Issues](https://github.com/rodion981/ha-energy-outages/issues).
 
 Made with ❤️ в Україні.
