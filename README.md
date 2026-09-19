@@ -1,118 +1,120 @@
-# ⚡ Alerts Energy Outages для Home Assistant
+# ⚡ Alerts Energy Outages for Home Assistant
 
 [![release](https://img.shields.io/github/v/release/rodion981/ha-energy-outages?display_name=tag&sort=semver)](https://github.com/rodion981/ha-energy-outages/releases)
 ![hacs](https://img.shields.io/badge/HACS-Custom-orange)
 [![patreon](https://img.shields.io/badge/support-patreon-ff424d)](https://www.patreon.com/c/Rodion_Kurylenko)
 
-Користувацька інтеграція Home Assistant, яка отримує графіки відключень із [alerts.energy/kyiv](https://alerts.energy/kyiv) для черг ДТЕК Київські електромережі.
+[**English**](./README.md) | [Українською](./README.uk.md)
 
-## Можливості
+A custom Home Assistant integration that retrieves power outage schedules from [alerts.energy/kyiv](https://alerts.energy/kyiv) for DTEK Kyiv Electric Networks outage groups.
 
-- налаштування черги через інтерфейс Home Assistant;
-- графік на сьогодні та завтра;
-- усі періоди відключень із точністю до 30 хвилин;
-- binary sensor «Відключення зараз»;
-- сирі погодинні коди й обчислені періоди в атрибутах;
-- автоматичне оновлення даних кожні 60 секунд;
+## Features
 
-Внутрішній domain інтеграції: `alerts_energy_outages`.
+- outage group configuration through the Home Assistant UI;
+- schedules for today and tomorrow;
+- all outage periods with 30-minute precision;
+- an “Outage now” binary sensor;
+- raw hourly codes and calculated outage periods in entity attributes;
+- automatic data updates every 60 seconds.
 
-## Встановлення через HACS
+The integration domain is `alerts_energy_outages`.
 
-1. Відкрийте **HACS → Integrations**.
-2. Відкрийте меню у правому верхньому куті та виберіть **Custom repositories**.
-3. Додайте репозиторій:
+## Installation via HACS
+
+1. Open **HACS → Integrations**.
+2. Open the menu in the top-right corner and select **Custom repositories**.
+3. Add the repository:
 
    ```text
    https://github.com/rodion981/ha-energy-outages
    ```
 
-   Тип: **Integration**.
+   Type: **Integration**.
 
-4. Знайдіть та встановіть **Alerts Energy Outages**.
-5. Перезапустіть Home Assistant.
-6. Відкрийте **Settings → Devices & services → Add integration**.
-7. Знайдіть **Alerts Energy Outages**, задайте назву та виберіть чергу.
+4. Find and install **Alerts Energy Outages**.
+5. Restart Home Assistant.
+6. Open **Settings → Devices & services → Add integration**.
+7. Find **Alerts Energy Outages**, enter a name, and select your outage group.
 
-## Створені сутності
+## Created entities
 
-Для кожної доданої черги інтеграція створює три сутності:
+For each configured outage group, the integration creates three entities:
 
-| Сутність | Призначення |
+| Entity | Purpose |
 |---|---|
-| Графік на сьогодні | Усі періоди відключень на поточну добу |
-| Графік на завтра | Усі опубліковані періоди на наступну добу |
-| Відключення зараз | Увімкнений, якщо поточний час потрапляє в період відключення |
+| Today schedule | All outage periods for the current day |
+| Tomorrow schedule | All published outage periods for the next day |
+| Outage now | Turns on when the current time falls within an outage period |
 
-Home Assistant формує entity ID із назви config entry та назви сутності. Актуальні ID можна побачити в **Settings → Devices & services → Alerts Energy Outages → Entities**.
+Home Assistant generates entity IDs from the config entry name and entity name. You can see the current IDs under **Settings → Devices & services → Alerts Energy Outages → Entities**.
 
-### Атрибути сенсорів графіка
+### Schedule sensor attributes
 
-| Атрибут | Опис |
+| Attribute | Description |
 |---|---|
-| `queue` | Вибрана черга, наприклад `2.2` |
-| `operator` | Ідентифікатор оператора в Alerts Energy |
-| `updated` | Час останньої зміни графіка, якщо його надає API |
-| `hours` | Масив із 24 погодинних кодів |
-| `periods` | Обчислені проміжки з полями `start` і `end` |
+| `queue` | Selected outage group, for example `2.2` |
+| `operator` | Operator identifier used by Alerts Energy |
+| `updated` | Time of the latest schedule change, if provided by the API |
+| `hours` | Array containing 24 hourly codes |
+| `periods` | Calculated periods with `start` and `end` fields |
 
-Значення кодів:
+Code values:
 
-- `0` — світло є;
-- `1` — світла немає всю годину;
-- `2` — світла немає перші 30 хвилин;
-- `3` — світла немає другі 30 хвилин.
+- `0` — power is available;
+- `1` — no power for the entire hour;
+- `2` — no power for the first 30 minutes;
+- `3` — no power for the second 30 minutes.
 
-## Перехід із v2.0.x
+## Migrating from v2.0.x
 
-Версії `v2.0.1–v2.0.2` помилково використовували застарілий domain `yasno_outages`. Через це Home Assistant міг змішувати config entries та показувати помилку міграції.
+Versions `v2.0.1–v2.0.2` incorrectly used the legacy domain `yasno_outages`. Because of this, Home Assistant could mix config entries and show a migration error.
 
-Для переходу на `v2.1.0` або новішу версію:
+To migrate to `v2.1.0` or newer:
 
-1. У **Settings → Devices & services** видаліть config entry **Alerts Energy**.
-2. Видаліть стару версію **Alerts Energy Outages** у HACS.
-3. Перезапустіть Home Assistant.
-4. Встановіть актуальну версію **Alerts Energy Outages**.
-5. Знову перезапустіть Home Assistant і додайте інтеграцію заново.
+1. In **Settings → Devices & services**, remove the **Alerts Energy** config entry.
+2. Remove the old **Alerts Energy Outages** version from HACS.
+3. Restart Home Assistant.
+4. Install the current version of **Alerts Energy Outages**.
+5. Restart Home Assistant again and add the integration from scratch.
 
-Починаючи з `v2.1.0`, використовується окрема папка `custom_components/alerts_energy_outages`.
+Starting with `v2.1.0`, the integration uses the dedicated `custom_components/alerts_energy_outages` directory.
 
-## Як це працює
+## How it works
 
-Інтеграція опитує публічний JSON endpoint Alerts Energy:
+The integration polls the public Alerts Energy JSON endpoint:
 
 ```text
 https://alerts.energy/api/v1/source-registry/areas/kyiv/shutdowns
 ```
 
-Для вибраної черги береться запис оператора `kyiv_oblenergo`. Погодинні коди перетворюються на півгодинні межі, а сусідні відрізки об’єднуються в суцільні періоди.
+For the selected outage group, it uses the `kyiv_oblenergo` operator entry. Hourly codes are converted into 30-minute boundaries, and adjacent segments are merged into continuous outage periods.
 
-Якщо API тимчасово недоступне або повертає некоректну структуру, coordinator позначає оновлення як невдале й Home Assistant зберігає останні успішно отримані дані.
+If the API is temporarily unavailable or returns an invalid structure, the coordinator marks the update as failed and Home Assistant keeps the most recently retrieved successful data.
 
-## Legacy YAML-пакет
+## Legacy YAML package
 
-У репозиторії залишено старий YAML-варіант:
+The repository still includes the older YAML-based version:
 
 ```text
 includes/packages/energyua_22.yaml
 ```
 
-Він потрібен лише для ручного встановлення без custom integration. Для нових інсталяцій рекомендовано використовувати HACS-інтеграцію. Не варто одночасно налаштовувати ту саму чергу через HACS та legacy YAML, оскільки це створить дублікати сутностей.
+It is only needed for manual setup without the custom integration. For new installations, the HACS integration is recommended. Do not configure the same outage group through both HACS and the legacy YAML package at the same time, because this will create duplicate entities.
 
-## Вимоги
+## Requirements
 
-- Home Assistant 2024.6 або новіший;
-- доступ Home Assistant до `https://alerts.energy`;
-- HACS потрібен лише для автоматичного встановлення та оновлення.
+- Home Assistant 2024.6 or newer;
+- Home Assistant must be able to access `https://alerts.energy`;
+- HACS is only required for automatic installation and updates.
 
-## Відомі обмеження
+## Known limitations
 
-- наразі підтримується Київ і оператор ДТЕК Київські електромережі;
-- порожній масив API може означати як відсутність відключень, так і ще не опублікований графік;
-- джерело даних є стороннім сервісом і може змінити формат API.
+- currently supports Kyiv and the DTEK Kyiv Electric Networks operator;
+- an empty API array may mean either that there are no outages or that the schedule has not been published yet;
+- the data source is a third-party service and its API format may change.
 
-## Підтримка
+## Support
 
-Про помилки та пропозиції повідомляйте через [GitHub Issues](https://github.com/rodion981/ha-energy-outages/issues).
+Report bugs and suggestions through [GitHub Issues](https://github.com/rodion981/ha-energy-outages/issues).
 
-Made with ❤️ в Україні.
+Made with ❤️ in Ukraine.
