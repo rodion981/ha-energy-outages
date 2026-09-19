@@ -1,10 +1,25 @@
-# ⚡ Alerts Energy Outages для Home Assistant
+# Alerts Energy Outages
 
-[![release](https://img.shields.io/github/v/release/rodion981/ha-energy-outages?display_name=tag&sort=semver)](https://github.com/rodion981/ha-energy-outages/releases)
-![hacs](https://img.shields.io/badge/HACS-Custom-orange)
-[![patreon](https://img.shields.io/badge/support-patreon-ff424d)](https://www.patreon.com/c/Rodion_Kurylenko)
+Графіки відключень з Alerts Energy безпосередньо в Home Assistant.
+
+[![GitHub Release](https://img.shields.io/github/v/release/rodion981/ha-energy-outages?display_name=tag&sort=semver)](https://github.com/rodion981/ha-energy-outages/releases)
+[![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/)
+[![License](https://img.shields.io/github/license/rodion981/ha-energy-outages)](./LICENSE)
 
 [English](./README.md) | [**Українською**](./README.uk.md)
+
+## Швидке встановлення
+
+1. Відкрийте цей репозиторій у HACS кнопкою нижче та встановіть інтеграцію.
+2. Перезапустіть Home Assistant.
+3. Натисніть **Add Integration**, щоб запустити налаштування інтеграції.
+
+[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rodion981&repository=ha-energy-outages&category=integration)
+
+[![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=alerts_energy_outages)
+
+> [!NOTE]
+> Для кнопки HACS потрібен встановлений HACS. Кнопка Add Integration працюватиме після завантаження кастомної інтеграції та перезапуску Home Assistant.
 
 Користувацька інтеграція Home Assistant, яка отримує графіки відключень із [alerts.energy/kyiv](https://alerts.energy/kyiv) для черг ДТЕК Київські електромережі.
 
@@ -36,7 +51,7 @@
 6. Відкрийте **Settings → Devices & services → Add integration**.
 7. Знайдіть **Alerts Energy Outages**, задайте назву та виберіть чергу.
 
-## Створені сутності
+## Сутності
 
 Для кожної доданої черги інтеграція створює три сутності:
 
@@ -118,3 +133,7 @@ includes/packages/energyua_22.yaml
 Про помилки та пропозиції повідомляйте через [GitHub Issues](https://github.com/rodion981/ha-energy-outages/issues).
 
 Made with ❤️ в Україні.
+
+## Ліцензія
+
+[MIT](LICENSE)
