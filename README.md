@@ -1,10 +1,25 @@
-# ⚡ Alerts Energy Outages for Home Assistant
+# Alerts Energy Outages
 
-[![release](https://img.shields.io/github/v/release/rodion981/ha-energy-outages?display_name=tag&sort=semver)](https://github.com/rodion981/ha-energy-outages/releases)
-![hacs](https://img.shields.io/badge/HACS-Custom-orange)
-[![patreon](https://img.shields.io/badge/support-patreon-ff424d)](https://www.patreon.com/c/Rodion_Kurylenko)
+Power outage schedules from Alerts Energy directly in Home Assistant.
+
+[![GitHub Release](https://img.shields.io/github/v/release/rodion981/ha-energy-outages?display_name=tag&sort=semver)](https://github.com/rodion981/ha-energy-outages/releases)
+[![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/)
+[![License](https://img.shields.io/github/license/rodion981/ha-energy-outages)](./LICENSE)
 
 [**English**](./README.md) | [Українською](./README.uk.md)
+
+## Quick install
+
+1. Open this repository in HACS using the button below and download the integration.
+2. Restart Home Assistant.
+3. Use **Add Integration** to start the setup flow.
+
+[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rodion981&repository=ha-energy-outages&category=integration)
+
+[![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=alerts_energy_outages)
+
+> [!NOTE]
+> The HACS button requires HACS to be installed. The Add Integration button works after the custom integration has been downloaded and Home Assistant restarted.
 
 A custom Home Assistant integration that retrieves power outage schedules from [alerts.energy/kyiv](https://alerts.energy/kyiv) for DTEK Kyiv Electric Networks outage groups.
 
@@ -36,7 +51,7 @@ The integration domain is `alerts_energy_outages`.
 6. Open **Settings → Devices & services → Add integration**.
 7. Find **Alerts Energy Outages**, enter a name, and select your outage group.
 
-## Created entities
+## Entities
 
 For each configured outage group, the integration creates three entities:
 
@@ -118,3 +133,7 @@ It is only needed for manual setup without the custom integration. For new insta
 Report bugs and suggestions through [GitHub Issues](https://github.com/rodion981/ha-energy-outages/issues).
 
 Made with ❤️ in Ukraine.
+
+## License
+
+[MIT](LICENSE)
