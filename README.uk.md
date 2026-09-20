@@ -6,7 +6,7 @@
 [![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/)
 [![License](https://img.shields.io/github/license/rodion981/ha-energy-outages)](./LICENSE)
 [![Support via monobank](https://img.shields.io/badge/Support-monobank-black)](https://send.monobank.ua/jar/9jqG7oXrZG)
-[![Patreon](https://img.shields.io/badge/Patreon-Support-FF424D?logo=patreon&logoColor=white)](https://www.patreon.com/c/Rodion_Kurylenko)
+
 
 [English](./README.md) | [**Українською**](./README.uk.md)
 
