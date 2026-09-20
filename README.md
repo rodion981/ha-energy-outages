@@ -5,6 +5,8 @@ Power outage schedules from Alerts Energy directly in Home Assistant.
 [![GitHub Release](https://img.shields.io/github/v/release/rodion981/ha-energy-outages?display_name=tag&sort=semver)](https://github.com/rodion981/ha-energy-outages/releases)
 [![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/)
 [![License](https://img.shields.io/github/license/rodion981/ha-energy-outages)](./LICENSE)
+[![Support via monobank](https://img.shields.io/badge/Support-monobank-black)](https://send.monobank.ua/jar/9jqG7oXrZG)
+[![Patreon](https://img.shields.io/badge/Patreon-Support-FF424D?logo=patreon&logoColor=white)](https://www.patreon.com/c/Rodion_Kurylenko)
 
 [**English**](./README.md) | [Українською](./README.uk.md)
 
@@ -129,6 +131,8 @@ It is only needed for manual setup without the custom integration. For new insta
 - the data source is a third-party service and its API format may change.
 
 ## Support
+
+If this project is useful to you, you can support its development via [monobank](https://send.monobank.ua/jar/9jqG7oXrZG). You can also support the project on [Patreon](https://www.patreon.com/c/Rodion_Kurylenko).
 
 Report bugs and suggestions through [GitHub Issues](https://github.com/rodion981/ha-energy-outages/issues).
 
