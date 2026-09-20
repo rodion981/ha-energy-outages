@@ -5,6 +5,8 @@
 [![GitHub Release](https://img.shields.io/github/v/release/rodion981/ha-energy-outages?display_name=tag&sort=semver)](https://github.com/rodion981/ha-energy-outages/releases)
 [![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/)
 [![License](https://img.shields.io/github/license/rodion981/ha-energy-outages)](./LICENSE)
+[![Support via monobank](https://img.shields.io/badge/Support-monobank-black)](https://send.monobank.ua/jar/9jqG7oXrZG)
+[![Patreon](https://img.shields.io/badge/Patreon-Support-FF424D?logo=patreon&logoColor=white)](https://www.patreon.com/c/Rodion_Kurylenko)
 
 [English](./README.md) | [**Українською**](./README.uk.md)
 
@@ -129,6 +131,8 @@ includes/packages/energyua_22.yaml
 - джерело даних є стороннім сервісом і може змінити формат API.
 
 ## Підтримка
+
+Якщо проєкт вам корисний, його розробку можна підтримати через [monobank](https://send.monobank.ua/jar/9jqG7oXrZG). Також проєкт можна підтримати на [Patreon](https://www.patreon.com/c/Rodion_Kurylenko).
 
 Про помилки та пропозиції повідомляйте через [GitHub Issues](https://github.com/rodion981/ha-energy-outages/issues).
 
