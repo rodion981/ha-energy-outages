@@ -3,25 +3,45 @@
     "step": {
       "user": {
         "title": "Alerts Energy",
-        "description": "Оберіть чергу ДТЕК Київські електромережі.",
+        "description": "Select your exact Kyiv outage queue from the current Alerts Energy list.",
         "data": {
-          "name": "Назва",
-          "queue": "Черга"
+          "name": "Name",
+          "queue": "Queue"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure outage queue",
+        "description": "Select the exact queue shown by Alerts Energy. Existing entity IDs are preserved.",
+        "data": {
+          "name": "Name",
+          "queue": "Queue"
         }
       }
     },
     "abort": {
-      "already_configured": "Цю чергу вже налаштовано."
+      "already_configured": "This queue is already configured.",
+      "reconfigure_successful": "The queue has been updated.",
+      "invalid_entry": "The configuration entry could not be found."
+    },
+    "error": {
+      "cannot_connect": "Cannot retrieve queues. Check the connection and try again.",
+      "no_queues": "The source has not published any queues for this operator yet.",
+      "invalid_queue": "This queue is no longer available. Select an exact queue from the list."
     }
   },
   "entity": {
     "sensor": {
-      "today": {"name": "Графік на сьогодні"},
-      "tomorrow": {"name": "Графік на завтра"}
+      "today": {
+        "name": "Today's schedule"
+      },
+      "tomorrow": {
+        "name": "Tomorrow's schedule"
+      }
     },
     "binary_sensor": {
-      "outage_now": {"name": "Відключення зараз"}
+      "outage_now": {
+        "name": "Outage now"
+      }
     }
   }
 }
-

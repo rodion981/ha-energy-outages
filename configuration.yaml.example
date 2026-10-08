@@ -3,4 +3,4 @@ homeassistant:
   packages: !include_dir_named includes/packages
 
 # Якщо хочете підключати автоматизації з файлів:
-# automation: !include_dir_merge_list automations
+# automation: !include_dir_list automations

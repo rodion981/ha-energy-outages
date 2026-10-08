@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import timedelta
+import logging
+from datetime import datetime, timedelta
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -10,13 +11,25 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import AlertsEnergyApi, AlertsEnergyApiError
-from .const import CONF_OPERATOR, DEFAULT_OPERATOR, DOMAIN, SCAN_INTERVAL_SECONDS
+from .const import (
+    CONF_OPERATOR,
+    DEFAULT_OPERATOR,
+    DOMAIN,
+    SCAN_INTERVAL_SECONDS,
+    SCHEDULE_TIME_ZONE,
+)
+
+_LOGGER = logging.getLogger(__name__)
 
 type OutagePeriod = tuple[int, int]
 
 
 def outage_periods(hours: list[int]) -> list[OutagePeriod]:
     """Convert 24 hourly codes to half-hour boundaries in the range 0..48."""
+    if len(hours) != 24 or any(
+        type(value) is not int or value not in range(4) for value in hours
+    ):
+        raise ValueError("Expected 24 integer outage codes in the range 0..3")
     halves: list[bool] = []
     for value in hours:
         halves.extend((value in (1, 2), value in (1, 3)))
@@ -39,14 +52,45 @@ def format_boundary(boundary: int) -> str:
     return f"{boundary // 2:02d}:{(boundary % 2) * 30:02d}"
 
 
-def format_periods(periods: list[OutagePeriod]) -> str:
+def format_periods(
+    periods: list[OutagePeriod], no_outages: str = "Без відключень"
+) -> str:
     """Format all outage periods for a sensor state."""
     if not periods:
-        return "Без відключень"
-    return "; ".join(
-        f"{format_boundary(start)}–{format_boundary(end)}"
-        for start, end in periods
-    )
+        return no_outages
+    parts = [
+        f"{format_boundary(start)}–{format_boundary(end)}" for start, end in periods
+    ]
+    result = "; ".join(parts)
+    if len(result) <= 255:
+        return result
+    for count in range(len(parts) - 1, 0, -1):
+        result = "; ".join(parts[:count]) + f"; … (+{len(parts) - count})"
+        if len(result) <= 255:
+            return result
+    return "…"
+
+
+def schedule_day_status(data: dict[str, Any] | None, day: str) -> str:
+    """Distinguish published schedules from missing, stale or invalid data."""
+    if not data or not data.get("schedule_found", True):
+        return "not_found"
+    hours = data.get(day)
+    if hours is None or hours == []:
+        return "unpublished"
+    if (
+        not isinstance(hours, list)
+        or len(hours) != 24
+        or any(type(value) is not int or value not in range(4) for value in hours)
+    ):
+        return "invalid"
+    today = datetime.now(SCHEDULE_TIME_ZONE).date()
+    expected = today + timedelta(days=day == "tomorrow")
+    if data.get(f"{day}Date") != expected.isoformat():
+        return "stale"
+    if data.get(f"{day}Status") != "ScheduleApplies":
+        return "unpublished"
+    return "published"
 
 
 class AlertsEnergyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -60,7 +104,7 @@ class AlertsEnergyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     ) -> None:
         super().__init__(
             hass,
-            logger=__import__("logging").getLogger(__name__),
+            logger=_LOGGER,
             name=DOMAIN,
             update_interval=timedelta(seconds=SCAN_INTERVAL_SECONDS),
         )
@@ -73,4 +117,3 @@ class AlertsEnergyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return await self._api.async_get_schedule(self._operator, self._queue)
         except AlertsEnergyApiError as err:
             raise UpdateFailed(str(err)) from err
-

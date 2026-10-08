@@ -116,7 +116,7 @@ The repository still includes the older YAML-based version:
 includes/packages/energyua_22.yaml
 ```
 
-It is only needed for manual setup without the custom integration. For new installations, the HACS integration is recommended. Do not configure the same outage group through both HACS and the legacy YAML package at the same time, because this will create duplicate entities.
+It is only needed for manual setup without the custom integration. For new installations, the HACS integration is recommended. The YAML package requires Home Assistant’s timezone to be `Europe/Kyiv`; its queue remains exactly `2.2` and is never mapped to another queue. Do not configure the same outage group through both HACS and the legacy YAML package at the same time, because this will create duplicate entities.
 
 ## Requirements
 
@@ -127,8 +127,24 @@ It is only needed for manual setup without the custom integration. For new insta
 ## Known limitations
 
 - currently supports Kyiv and the DTEK Kyiv Electric Networks operator;
-- an empty API array may mean either that there are no outages or that the schedule has not been published yet;
+- missing, malformed, undated, stale, or unpublished daily schedules are unavailable; a published array of 24 zeros means no scheduled outages;
 - the data source is a third-party service and its API format may change.
+
+## Changes in v2.2.0
+
+- The setup form discovers exact queues from the current API instead of assuming 12 fixed identifiers. It never substitutes one queue for another.
+- Use **Settings → Devices & services → Alerts Energy Outages → Reconfigure** to select a changed queue. Entity IDs, unique IDs and the existing device are retained. Existing entries are upgraded in place; do not remove them to update from v2.1.x.
+- If an existing queue disappears, its entities remain registered but unavailable until the queue returns or you reconfigure it.
+- Today and tomorrow have independent availability. The integration checks integer codes, source status and the schedule date in `Europe/Kyiv`. API errors make the entities unavailable and retain the last successful data in memory.
+- Half-hour and midnight changes update entity states without an additional API request. This is a schedule indicator, not a measurement of actual grid power.
+- Long text states are shortened to stay within Home Assistant’s 255-character limit; all periods remain in attributes. “No outages” is shown in English and “Без відключень” in Ukrainian. Automations should use `schedule_status` and `periods` instead of matching localized text.
+- New attributes: `date`, `source_status`, `schedule_status` (`published`, `unpublished`, `invalid`, `stale`, `not_found`). The existing `queue`, `operator`, `updated`, `hours` and `periods` attributes remain.
+- Diagnostics expose update health and public schedule metadata, without exporting the full response or entry title.
+- The legacy package uses modern `template:` syntax, retains its entity IDs and friendly names, and includes every outage period in its binary sensor and summary attributes. Existing first/second-slot entities remain for compatibility. Missing data no longer means power is available; a valid zero-outage tomorrow schedule is considered published.
+
+The default queue `2.2` used by older versions may be absent from the current source. Verify your actual queue on Alerts Energy before reconfiguring; do not infer a replacement from similar numbering.
+
+Development and verification instructions: [CONTRIBUTING.md](./CONTRIBUTING.md). Release history: [CHANGELOG.md](./CHANGELOG.md).
 
 ## Support
 

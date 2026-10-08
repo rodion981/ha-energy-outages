@@ -1,0 +1,46 @@
+name: Validate
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - python: "3.12"
+            fixture: "0.13.132"
+          - python: "3.14"
+            fixture: "0.13.370"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: pip install pytest-homeassistant-custom-component==${{ matrix.fixture }} ruff==0.16.10 mypy==2.4.0
+      - if: matrix.python == '3.12'
+        run: pip install -r requirements-ha-minimum.txt
+      - if: matrix.python == '3.14'
+        run: |
+          pip install jsonpath-python==1.1.6
+          pip install --no-deps homeassistant==2026.10.0
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: python scripts/validate.py
+      - run: mypy
+      - run: pytest -q --cov --cov-report=term-missing
+  hassfest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: home-assistant/actions/hassfest@master
+  hacs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hacs/action@main
+        with:
+          category: integration

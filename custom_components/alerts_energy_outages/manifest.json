@@ -1,11 +1,13 @@
 {
-  "domain": "alerts_energy_outages",
-  "name": "Alerts Energy Outages",
-  "codeowners": ["@rodion981"],
+  "codeowners": [
+    "@rodion981"
+  ],
   "config_flow": true,
   "documentation": "https://github.com/rodion981/ha-energy-outages",
+  "domain": "alerts_energy_outages",
   "integration_type": "service",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/rodion981/ha-energy-outages/issues",
-  "version": "2.1.1"
+  "name": "Alerts Energy Outages",
+  "version": "2.2.0"
 }

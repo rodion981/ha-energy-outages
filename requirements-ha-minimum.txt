@@ -1,0 +1,5 @@
+# Keep the 2024.6 test environment compatible with its historical dependencies.
+pytest-homeassistant-custom-component==0.13.132
+josepy<2
+pycares==4.4.0
+jsonpath==0.82.2

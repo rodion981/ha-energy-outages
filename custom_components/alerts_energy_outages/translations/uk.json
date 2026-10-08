@@ -3,7 +3,15 @@
     "step": {
       "user": {
         "title": "Alerts Energy",
-        "description": "Оберіть чергу ДТЕК Київські електромережі.",
+        "description": "Оберіть точну чергу Києва з поточного списку Alerts Energy.",
+        "data": {
+          "name": "Назва",
+          "queue": "Черга"
+        }
+      },
+      "reconfigure": {
+        "title": "Змінити чергу відключень",
+        "description": "Оберіть точну чергу з Alerts Energy. Існуючі entity IDs буде збережено.",
         "data": {
           "name": "Назва",
           "queue": "Черга"
@@ -11,17 +19,29 @@
       }
     },
     "abort": {
-      "already_configured": "Цю чергу вже налаштовано."
+      "already_configured": "Цю чергу вже налаштовано.",
+      "reconfigure_successful": "Чергу оновлено.",
+      "invalid_entry": "Налаштування інтеграції не знайдено."
+    },
+    "error": {
+      "cannot_connect": "Не вдалося отримати черги. Перевірте з’єднання й повторіть спробу.",
+      "no_queues": "Джерело ще не опублікувало черги цього оператора.",
+      "invalid_queue": "Ця черга недоступна. Оберіть точну чергу зі списку."
     }
   },
   "entity": {
     "sensor": {
-      "today": {"name": "Графік на сьогодні"},
-      "tomorrow": {"name": "Графік на завтра"}
+      "today": {
+        "name": "Графік на сьогодні"
+      },
+      "tomorrow": {
+        "name": "Графік на завтра"
+      }
     },
     "binary_sensor": {
-      "outage_now": {"name": "Відключення зараз"}
+      "outage_now": {
+        "name": "Відключення зараз"
+      }
     }
   }
 }
-
