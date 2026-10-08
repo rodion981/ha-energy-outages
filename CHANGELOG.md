@@ -10,6 +10,7 @@
 - Correct outage binary sensor semantics and translate the no-outage label for English/Ukrainian.
 - Add allowlisted diagnostics, runtime/regression tests, lint, formatting, type checks and HACS/hassfest CI.
 - Migrate legacy YAML to modern templates with stable IDs, all outage periods and unavailable-data handling; correct the automation include example.
+- Include local brand icons and repository metadata required by HACS validation.
 - Retain HA 2024.6+ support using the compatible entity callback API.
 
 Existing v2.1.x entries are preserved. If your queue disappears, explicitly select your verified current queue through Reconfigure. Text states can be shortened/localized; prefer `periods` and `schedule_status` in automations.
@@ -22,6 +23,7 @@ Existing v2.1.x entries are preserved. If your queue disappears, explicitly sele
 - Коректна семантика binary sensor і український/англійський текст відсутності відключень.
 - Diagnostics, runtime/regression-тести, lint, formatting, type checking та HACS/hassfest CI.
 - Сучасний legacy YAML зі сталими IDs, усіма періодами та обробкою unavailable; виправлений приклад include автоматизацій.
+- Локальна іконка й metadata репозиторію для успішної перевірки HACS.
 - Збережена підтримка HA 2024.6+ завдяки сумісному callback API.
 
 Існуючі entries v2.1.x зберігаються. Якщо черга зникла, оберіть перевірену поточну чергу через Reconfigure. Текстові стани можуть скорочуватися/локалізуватися; в автоматизаціях використовуйте `periods` і `schedule_status`.

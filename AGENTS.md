@@ -2,6 +2,7 @@
 
 ## Архітектура
 - `custom_components/alerts_energy_outages/`: custom integration, domain `alerts_energy_outages`.
+- `brand/icon.png`, `brand/icon@2x.png`: локальна іконка для HA 2026.3+ та HACS; старі HA її не використовують.
 - `manifest.json`, `hacs.json`: версія/HA metadata; `const.py`: operator, endpoint, polling, source timezone.
 - `config_flow.py`: динамічні точні черги, duplicate protection, reconfigure зі збереженням entity identity.
 - `api.py`: HA-managed aiohttp session, публічний GET, response/queue validation.

@@ -49,6 +49,11 @@ def main() -> None:
         Loader=ExampleLoader,
     )
     manifest = json.loads((INTEGRATION / "manifest.json").read_text(encoding="utf-8"))
+    assert list(manifest) == [
+        "domain",
+        "name",
+        *sorted(set(manifest) - {"domain", "name"}),
+    ]
     assert manifest["domain"] == INTEGRATION.name
     assert manifest["config_flow"] is True
     print("Python, JSON, YAML, translations and metadata checks passed")
