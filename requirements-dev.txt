@@ -1,0 +1,5 @@
+# Current HA fixture baseline; CI additionally tests the declared minimum.
+pytest-homeassistant-custom-component==0.13.370
+ruff==0.16.10
+mypy==2.4.0
+jsonpath-python==1.1.6

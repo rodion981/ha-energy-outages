@@ -1,378 +1,487 @@
-############################################
-# includes/packages/energyua_22.yaml
-# Alerts Energy: Київ, ДТЕК, черга 2.2
-############################################
-
-# Значення годин у API:
-# 0 — світло є; 1 — немає всю годину;
-# 2 — немає перші 30 хв; 3 — немає другі 30 хв.
+# Legacy package for Kyiv queue 2.2. Requires HA timezone Europe/Kyiv.
+# Exact queue IDs are not remapped. Prefer the integration for dynamic queues.
+# Existing entity IDs and friendly names are retained.
+homeassistant:
+  customize:
+    sensor.energyua_22_today_slot1_start_text:
+      friendly_name: 'Сьогодні: початок 1-го періоду (текст)'
+    sensor.energyua_22_today_slot1_end_text:
+      friendly_name: 'Сьогодні: кінець 1-го періоду (текст)'
+    sensor.energyua_22_today_slot2_start_text:
+      friendly_name: 'Сьогодні: початок 2-го періоду (текст)'
+    sensor.energyua_22_today_slot2_end_text:
+      friendly_name: 'Сьогодні: кінець 2-го періоду (текст)'
+    sensor.energyua_22_tomorrow_slot1_start_text:
+      friendly_name: 'Завтра: початок 1-го періоду (текст)'
+    sensor.energyua_22_tomorrow_slot1_end_text:
+      friendly_name: 'Завтра: кінець 1-го періоду (текст)'
+    sensor.energyua_22_tomorrow_slot2_start_text:
+      friendly_name: 'Завтра: початок 2-го періоду (текст)'
+    sensor.energyua_22_tomorrow_slot2_end_text:
+      friendly_name: 'Завтра: кінець 2-го періоду (текст)'
+    sensor.energyua_22_today_slot1_duration_h_text:
+      friendly_name: 'Сьогодні: тривалість 1-го (текст)'
+    sensor.energyua_22_today_slot2_duration_h_text:
+      friendly_name: 'Сьогодні: тривалість 2-го (текст)'
+    sensor.energyua_22_tomorrow_slot1_duration_h_text:
+      friendly_name: 'Завтра: тривалість 1-го (текст)'
+    sensor.energyua_22_tomorrow_slot2_duration_h_text:
+      friendly_name: 'Завтра: тривалість 2-го (текст)'
+    sensor.energyua_22_tomorrow_fresh:
+      friendly_name: 'Завтра: дані свіжі'
+    sensor.energyua_22_today_slot1_start:
+      friendly_name: 'Сьогодні: початок 1-го періоду'
+    sensor.energyua_22_today_slot1_end:
+      friendly_name: 'Сьогодні: кінець 1-го періоду'
+    sensor.energyua_22_today_slot1_duration_h:
+      friendly_name: 'Сьогодні: тривалість 1-го, год'
+    sensor.energyua_22_today_slot2_start:
+      friendly_name: 'Сьогодні: початок 2-го періоду'
+    sensor.energyua_22_today_slot2_end:
+      friendly_name: 'Сьогодні: кінець 2-го періоду'
+    sensor.energyua_22_today_slot2_duration_h:
+      friendly_name: 'Сьогодні: тривалість 2-го, год'
+    sensor.energyua_22_tomorrow_slot1_start:
+      friendly_name: 'Завтра: початок 1-го періоду'
+    sensor.energyua_22_tomorrow_slot1_end:
+      friendly_name: 'Завтра: кінець 1-го періоду'
+    sensor.energyua_22_tomorrow_slot1_duration_h:
+      friendly_name: 'Завтра: тривалість 1-го, год'
+    sensor.energyua_22_tomorrow_slot2_start:
+      friendly_name: 'Завтра: початок 2-го періоду'
+    sensor.energyua_22_tomorrow_slot2_end:
+      friendly_name: 'Завтра: кінець 2-го періоду'
+    sensor.energyua_22_tomorrow_slot2_duration_h:
+      friendly_name: 'Завтра: тривалість 2-го, год'
+    sensor.energyua_22_today_brief:
+      friendly_name: 'Сьогодні: коротко'
+    sensor.energyua_22_tomorrow_brief:
+      friendly_name: 'Завтра: коротко'
+    binary_sensor.energyua_22_outage_now:
+      friendly_name: Відключення зараз
 rest:
-  - resource: "https://alerts.energy/api/v1/source-registry/areas/kyiv/shutdowns"
-    scan_interval: 60
-    timeout: 30
-    headers:
-      Referer: https://alerts.energy/kyiv
-      User-Agent: Mozilla/5.0 (Home Assistant; alerts.energy schedule)
-      Accept: application/json
-    sensor:
-      - name: energyua_22_today_hours
-        unique_id: energyua_22_today_hours
-        value_template: >-
-          {% set rows = value_json
-            | selectattr('initiator', 'eq', 'kyiv_oblenergo')
-            | selectattr('queue', 'eq', '2.2') | list %}
-          {{ (rows[0].today if rows else []) | to_json }}
-      - name: energyua_22_tomorrow_hours
-        unique_id: energyua_22_tomorrow_hours
-        value_template: >-
-          {% set rows = value_json
-            | selectattr('initiator', 'eq', 'kyiv_oblenergo')
-            | selectattr('queue', 'eq', '2.2') | list %}
-          {{ (rows[0].tomorrow if rows else []) | to_json }}
-
-
-# 2) TEMPLATE-СЕНСОРИ
-sensor:
-  - platform: template
-    sensors:
-      # Перетворення 24 погодинних кодів alerts.energy на перші два
-      # суцільні періоди відключення з точністю до 30 хвилин.
-      energyua_22_today_slot1_start_text:
-        friendly_name: "Сьогодні: початок 1-го періоду (текст)"
-        value_template: >-
-          {% set hours = states('sensor.energyua_22_today_hours') | from_json([]) %}
-          {% set ns = namespace(bits=[], periods=[], start=none) %}
-          {% for v in hours %}{% set ns.bits = ns.bits + [v in [1,2], v in [1,3]] %}{% endfor %}
-          {% for on in ns.bits %}
-            {% if on and ns.start is none %}{% set ns.start = loop.index0 %}
-            {% elif not on and ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, loop.index0]] %}{% set ns.start = none %}{% endif %}
-          {% endfor %}
-          {% if ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, 48]] %}{% endif %}
-          {% if ns.periods | length > 0 %}{{ '%02d:%02d' | format(ns.periods[0][0] // 2, (ns.periods[0][0] % 2) * 30) }}{% endif %}
-
-      energyua_22_today_slot1_end_text:
-        friendly_name: "Сьогодні: кінець 1-го періоду (текст)"
-        value_template: >-
-          {% set hours = states('sensor.energyua_22_today_hours') | from_json([]) %}
-          {% set ns = namespace(bits=[], periods=[], start=none) %}
-          {% for v in hours %}{% set ns.bits = ns.bits + [v in [1,2], v in [1,3]] %}{% endfor %}
-          {% for on in ns.bits %}{% if on and ns.start is none %}{% set ns.start = loop.index0 %}{% elif not on and ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, loop.index0]] %}{% set ns.start = none %}{% endif %}{% endfor %}
-          {% if ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, 48]] %}{% endif %}
-          {% if ns.periods | length > 0 %}{{ '%02d:%02d' | format(ns.periods[0][1] // 2, (ns.periods[0][1] % 2) * 30) }}{% endif %}
-
-      energyua_22_today_slot2_start_text:
-        friendly_name: "Сьогодні: початок 2-го періоду (текст)"
-        value_template: >-
-          {% set hours = states('sensor.energyua_22_today_hours') | from_json([]) %}
-          {% set ns = namespace(bits=[], periods=[], start=none) %}
-          {% for v in hours %}{% set ns.bits = ns.bits + [v in [1,2], v in [1,3]] %}{% endfor %}
-          {% for on in ns.bits %}{% if on and ns.start is none %}{% set ns.start = loop.index0 %}{% elif not on and ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, loop.index0]] %}{% set ns.start = none %}{% endif %}{% endfor %}
-          {% if ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, 48]] %}{% endif %}
-          {% if ns.periods | length > 1 %}{{ '%02d:%02d' | format(ns.periods[1][0] // 2, (ns.periods[1][0] % 2) * 30) }}{% endif %}
-
-      energyua_22_today_slot2_end_text:
-        friendly_name: "Сьогодні: кінець 2-го періоду (текст)"
-        value_template: >-
-          {% set hours = states('sensor.energyua_22_today_hours') | from_json([]) %}
-          {% set ns = namespace(bits=[], periods=[], start=none) %}
-          {% for v in hours %}{% set ns.bits = ns.bits + [v in [1,2], v in [1,3]] %}{% endfor %}
-          {% for on in ns.bits %}{% if on and ns.start is none %}{% set ns.start = loop.index0 %}{% elif not on and ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, loop.index0]] %}{% set ns.start = none %}{% endif %}{% endfor %}
-          {% if ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, 48]] %}{% endif %}
-          {% if ns.periods | length > 1 %}{{ '%02d:%02d' | format(ns.periods[1][1] // 2, (ns.periods[1][1] % 2) * 30) }}{% endif %}
-
-      energyua_22_tomorrow_slot1_start_text:
-        friendly_name: "Завтра: початок 1-го періоду (текст)"
-        value_template: >-
-          {% set hours = states('sensor.energyua_22_tomorrow_hours') | from_json([]) %}
-          {% set ns = namespace(bits=[], periods=[], start=none) %}
-          {% for v in hours %}{% set ns.bits = ns.bits + [v in [1,2], v in [1,3]] %}{% endfor %}
-          {% for on in ns.bits %}{% if on and ns.start is none %}{% set ns.start = loop.index0 %}{% elif not on and ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, loop.index0]] %}{% set ns.start = none %}{% endif %}{% endfor %}
-          {% if ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, 48]] %}{% endif %}
-          {% if ns.periods | length > 0 %}{{ '%02d:%02d' | format(ns.periods[0][0] // 2, (ns.periods[0][0] % 2) * 30) }}{% endif %}
-
-      energyua_22_tomorrow_slot1_end_text:
-        friendly_name: "Завтра: кінець 1-го періоду (текст)"
-        value_template: >-
-          {% set hours = states('sensor.energyua_22_tomorrow_hours') | from_json([]) %}
-          {% set ns = namespace(bits=[], periods=[], start=none) %}
-          {% for v in hours %}{% set ns.bits = ns.bits + [v in [1,2], v in [1,3]] %}{% endfor %}
-          {% for on in ns.bits %}{% if on and ns.start is none %}{% set ns.start = loop.index0 %}{% elif not on and ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, loop.index0]] %}{% set ns.start = none %}{% endif %}{% endfor %}
-          {% if ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, 48]] %}{% endif %}
-          {% if ns.periods | length > 0 %}{{ '%02d:%02d' | format(ns.periods[0][1] // 2, (ns.periods[0][1] % 2) * 30) }}{% endif %}
-
-      energyua_22_tomorrow_slot2_start_text:
-        friendly_name: "Завтра: початок 2-го періоду (текст)"
-        value_template: >-
-          {% set hours = states('sensor.energyua_22_tomorrow_hours') | from_json([]) %}
-          {% set ns = namespace(bits=[], periods=[], start=none) %}
-          {% for v in hours %}{% set ns.bits = ns.bits + [v in [1,2], v in [1,3]] %}{% endfor %}
-          {% for on in ns.bits %}{% if on and ns.start is none %}{% set ns.start = loop.index0 %}{% elif not on and ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, loop.index0]] %}{% set ns.start = none %}{% endif %}{% endfor %}
-          {% if ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, 48]] %}{% endif %}
-          {% if ns.periods | length > 1 %}{{ '%02d:%02d' | format(ns.periods[1][0] // 2, (ns.periods[1][0] % 2) * 30) }}{% endif %}
-
-      energyua_22_tomorrow_slot2_end_text:
-        friendly_name: "Завтра: кінець 2-го періоду (текст)"
-        value_template: >-
-          {% set hours = states('sensor.energyua_22_tomorrow_hours') | from_json([]) %}
-          {% set ns = namespace(bits=[], periods=[], start=none) %}
-          {% for v in hours %}{% set ns.bits = ns.bits + [v in [1,2], v in [1,3]] %}{% endfor %}
-          {% for on in ns.bits %}{% if on and ns.start is none %}{% set ns.start = loop.index0 %}{% elif not on and ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, loop.index0]] %}{% set ns.start = none %}{% endif %}{% endfor %}
-          {% if ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, 48]] %}{% endif %}
-          {% if ns.periods | length > 1 %}{{ '%02d:%02d' | format(ns.periods[1][1] // 2, (ns.periods[1][1] % 2) * 30) }}{% endif %}
-
-      # Сумісність зі старими entity ID сирих тривалостей.
-      energyua_22_today_slot1_duration_h_text:
-        friendly_name: "Сьогодні: тривалість 1-го (текст)"
-        unit_of_measurement: "год"
-        value_template: "{{ states('sensor.energyua_22_today_slot1_duration_h') }}"
-      energyua_22_today_slot2_duration_h_text:
-        friendly_name: "Сьогодні: тривалість 2-го (текст)"
-        unit_of_measurement: "год"
-        value_template: "{{ states('sensor.energyua_22_today_slot2_duration_h') }}"
-      energyua_22_tomorrow_slot1_duration_h_text:
-        friendly_name: "Завтра: тривалість 1-го (текст)"
-        unit_of_measurement: "год"
-        value_template: "{{ states('sensor.energyua_22_tomorrow_slot1_duration_h') }}"
-      energyua_22_tomorrow_slot2_duration_h_text:
-        friendly_name: "Завтра: тривалість 2-го (текст)"
-        unit_of_measurement: "год"
-        value_template: "{{ states('sensor.energyua_22_tomorrow_slot2_duration_h') }}"
-
-      # ---- прапорець "є валідні часи на завтра"
-      energyua_22_tomorrow_fresh:
-        friendly_name: "Завтра: дані свіжі"
-        value_template: >-
-          {% set t1 = states('sensor.energyua_22_tomorrow_slot1_start_text')|trim %}
-          {% set t2 = states('sensor.energyua_22_tomorrow_slot2_start_text')|trim %}
-          {{ t1|regex_match('^\\d{1,2}[:.]\\d{2}$') or t2|regex_match('^\\d{1,2}[:.]\\d{2}$') }}
-
-      # ===== СЬОГОДНІ: слот 1 =====
-      energyua_22_today_slot1_start:
-        friendly_name: "Сьогодні: початок 1-го періоду"
-        device_class: timestamp
-        value_template: >-
-          {% set t = states('sensor.energyua_22_today_slot1_start_text')|trim %}
-          {% if t and t|regex_match('^\\d{1,2}[:.]\\d{2}$') %}
-            {{ today_at((t if ':' in t else t|replace('.',':')) ~ ':00') }}
+- resource: https://alerts.energy/api/v1/source-registry/areas/kyiv/shutdowns
+  scan_interval: 60
+  timeout: 30
+  headers:
+    Referer: https://alerts.energy/kyiv
+    User-Agent: Mozilla/5.0 (Home Assistant; alerts.energy schedule)
+    Accept: application/json
+  sensor:
+  - name: energyua_22_today_hours
+    unique_id: energyua_22_today_hours
+    value_template: |-
+      {% set rows = value_json | selectattr('initiator', 'eq', 'kyiv_oblenergo') | selectattr('queue', 'eq', '2.2') | list %}
+      {% set row = rows[0] if rows else {} %}
+      {% set hours = row.get('today') %}
+      {% set ns = namespace(valid=hours is sequence and hours is not string and hours is not mapping and hours | count == 24) %}
+      {% if ns.valid %}
+        {% for v in hours %}{% if v is not integer or v not in [0,1,2,3] %}{% set ns.valid = false %}{% endif %}{% endfor %}
+      {% endif %}
+      {% if ns.valid and row.get('todayDate') == now().date().isoformat() and row.get('todayStatus') == 'ScheduleApplies' %}{{ hours | to_json }}{% else %}unknown{% endif %}
+    json_attributes_path: $[?(@.initiator=='kyiv_oblenergo' and @.queue=='2.2')]
+    json_attributes:
+    - todayDate
+    - todayStatus
+  - name: energyua_22_tomorrow_hours
+    unique_id: energyua_22_tomorrow_hours
+    value_template: |-
+      {% set rows = value_json | selectattr('initiator', 'eq', 'kyiv_oblenergo') | selectattr('queue', 'eq', '2.2') | list %}
+      {% set row = rows[0] if rows else {} %}
+      {% set hours = row.get('tomorrow') %}
+      {% set ns = namespace(valid=hours is sequence and hours is not string and hours is not mapping and hours | count == 24) %}
+      {% if ns.valid %}
+        {% for v in hours %}{% if v is not integer or v not in [0,1,2,3] %}{% set ns.valid = false %}{% endif %}{% endfor %}
+      {% endif %}
+      {% if ns.valid and row.get('tomorrowDate') == (now().date() + timedelta(days=1)).isoformat() and row.get('tomorrowStatus') == 'ScheduleApplies' %}{{ hours | to_json }}{% else %}unknown{% endif %}
+    json_attributes_path: $[?(@.initiator=='kyiv_oblenergo' and @.queue=='2.2')]
+    json_attributes:
+    - tomorrowDate
+    - tomorrowStatus
+template:
+- sensor:
+  - name: energyua_22_today_slot1_start_text
+    unique_id: energyua_22_today_slot1_start_text
+    state: |-
+      {% set hours = (states('sensor.energyua_22_today_hours') | from_json if (has_value('sensor.energyua_22_today_hours') and state_attr('sensor.energyua_22_today_hours', 'todayDate') == now().date().isoformat() and state_attr('sensor.energyua_22_today_hours', 'todayStatus') == 'ScheduleApplies') else []) %} {% set ns = namespace(bits=[], periods=[], start=none) %} {% for v in hours %}{% set ns.bits = ns.bits + [v in [1,2], v in [1,3]] %}{% endfor %} {% for on in ns.bits %}
+        {% if on and ns.start is none %}{% set ns.start = loop.index0 %}
+        {% elif not on and ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, loop.index0]] %}{% set ns.start = none %}{% endif %}
+      {% endfor %} {% if ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, 48]] %}{% endif %} {% if ns.periods | length > 0 %}{{ '%02d:%02d' | format(ns.periods[0][0] // 2, (ns.periods[0][0] % 2) * 30) }}{% endif %}
+    availability: '{{ (states(''sensor.energyua_22_today_hours'') | from_json if (has_value(''sensor.energyua_22_today_hours'')
+      and state_attr(''sensor.energyua_22_today_hours'', ''todayDate'') == now().date().isoformat() and state_attr(''sensor.energyua_22_today_hours'',
+      ''todayStatus'') == ''ScheduleApplies'') else []) | count == 24 }}'
+  - name: energyua_22_today_slot1_end_text
+    unique_id: energyua_22_today_slot1_end_text
+    state: '{% set hours = (states(''sensor.energyua_22_today_hours'') | from_json if (has_value(''sensor.energyua_22_today_hours'')
+      and state_attr(''sensor.energyua_22_today_hours'', ''todayDate'') == now().date().isoformat() and state_attr(''sensor.energyua_22_today_hours'',
+      ''todayStatus'') == ''ScheduleApplies'') else []) %} {% set ns = namespace(bits=[], periods=[], start=none) %} {% for
+      v in hours %}{% set ns.bits = ns.bits + [v in [1,2], v in [1,3]] %}{% endfor %} {% for on in ns.bits %}{% if on and
+      ns.start is none %}{% set ns.start = loop.index0 %}{% elif not on and ns.start is not none %}{% set ns.periods = ns.periods
+      + [[ns.start, loop.index0]] %}{% set ns.start = none %}{% endif %}{% endfor %} {% if ns.start is not none %}{% set ns.periods
+      = ns.periods + [[ns.start, 48]] %}{% endif %} {% if ns.periods | length > 0 %}{{ ''%02d:%02d'' | format(ns.periods[0][1]
+      // 2, (ns.periods[0][1] % 2) * 30) }}{% endif %}'
+    availability: '{{ (states(''sensor.energyua_22_today_hours'') | from_json if (has_value(''sensor.energyua_22_today_hours'')
+      and state_attr(''sensor.energyua_22_today_hours'', ''todayDate'') == now().date().isoformat() and state_attr(''sensor.energyua_22_today_hours'',
+      ''todayStatus'') == ''ScheduleApplies'') else []) | count == 24 }}'
+  - name: energyua_22_today_slot2_start_text
+    unique_id: energyua_22_today_slot2_start_text
+    state: '{% set hours = (states(''sensor.energyua_22_today_hours'') | from_json if (has_value(''sensor.energyua_22_today_hours'')
+      and state_attr(''sensor.energyua_22_today_hours'', ''todayDate'') == now().date().isoformat() and state_attr(''sensor.energyua_22_today_hours'',
+      ''todayStatus'') == ''ScheduleApplies'') else []) %} {% set ns = namespace(bits=[], periods=[], start=none) %} {% for
+      v in hours %}{% set ns.bits = ns.bits + [v in [1,2], v in [1,3]] %}{% endfor %} {% for on in ns.bits %}{% if on and
+      ns.start is none %}{% set ns.start = loop.index0 %}{% elif not on and ns.start is not none %}{% set ns.periods = ns.periods
+      + [[ns.start, loop.index0]] %}{% set ns.start = none %}{% endif %}{% endfor %} {% if ns.start is not none %}{% set ns.periods
+      = ns.periods + [[ns.start, 48]] %}{% endif %} {% if ns.periods | length > 1 %}{{ ''%02d:%02d'' | format(ns.periods[1][0]
+      // 2, (ns.periods[1][0] % 2) * 30) }}{% endif %}'
+    availability: '{{ (states(''sensor.energyua_22_today_hours'') | from_json if (has_value(''sensor.energyua_22_today_hours'')
+      and state_attr(''sensor.energyua_22_today_hours'', ''todayDate'') == now().date().isoformat() and state_attr(''sensor.energyua_22_today_hours'',
+      ''todayStatus'') == ''ScheduleApplies'') else []) | count == 24 }}'
+  - name: energyua_22_today_slot2_end_text
+    unique_id: energyua_22_today_slot2_end_text
+    state: '{% set hours = (states(''sensor.energyua_22_today_hours'') | from_json if (has_value(''sensor.energyua_22_today_hours'')
+      and state_attr(''sensor.energyua_22_today_hours'', ''todayDate'') == now().date().isoformat() and state_attr(''sensor.energyua_22_today_hours'',
+      ''todayStatus'') == ''ScheduleApplies'') else []) %} {% set ns = namespace(bits=[], periods=[], start=none) %} {% for
+      v in hours %}{% set ns.bits = ns.bits + [v in [1,2], v in [1,3]] %}{% endfor %} {% for on in ns.bits %}{% if on and
+      ns.start is none %}{% set ns.start = loop.index0 %}{% elif not on and ns.start is not none %}{% set ns.periods = ns.periods
+      + [[ns.start, loop.index0]] %}{% set ns.start = none %}{% endif %}{% endfor %} {% if ns.start is not none %}{% set ns.periods
+      = ns.periods + [[ns.start, 48]] %}{% endif %} {% if ns.periods | length > 1 %}{{ ''%02d:%02d'' | format(ns.periods[1][1]
+      // 2, (ns.periods[1][1] % 2) * 30) }}{% endif %}'
+    availability: '{{ (states(''sensor.energyua_22_today_hours'') | from_json if (has_value(''sensor.energyua_22_today_hours'')
+      and state_attr(''sensor.energyua_22_today_hours'', ''todayDate'') == now().date().isoformat() and state_attr(''sensor.energyua_22_today_hours'',
+      ''todayStatus'') == ''ScheduleApplies'') else []) | count == 24 }}'
+  - name: energyua_22_tomorrow_slot1_start_text
+    unique_id: energyua_22_tomorrow_slot1_start_text
+    state: '{% set hours = (states(''sensor.energyua_22_tomorrow_hours'') | from_json if (has_value(''sensor.energyua_22_tomorrow_hours'')
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowDate'') == (now().date() + timedelta(days=1)).isoformat()
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowStatus'') == ''ScheduleApplies'') else []) %} {% set
+      ns = namespace(bits=[], periods=[], start=none) %} {% for v in hours %}{% set ns.bits = ns.bits + [v in [1,2], v in
+      [1,3]] %}{% endfor %} {% for on in ns.bits %}{% if on and ns.start is none %}{% set ns.start = loop.index0 %}{% elif
+      not on and ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, loop.index0]] %}{% set ns.start = none
+      %}{% endif %}{% endfor %} {% if ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, 48]] %}{% endif
+      %} {% if ns.periods | length > 0 %}{{ ''%02d:%02d'' | format(ns.periods[0][0] // 2, (ns.periods[0][0] % 2) * 30) }}{%
+      endif %}'
+    availability: '{{ (states(''sensor.energyua_22_tomorrow_hours'') | from_json if (has_value(''sensor.energyua_22_tomorrow_hours'')
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowDate'') == (now().date() + timedelta(days=1)).isoformat()
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowStatus'') == ''ScheduleApplies'') else []) | count ==
+      24 }}'
+  - name: energyua_22_tomorrow_slot1_end_text
+    unique_id: energyua_22_tomorrow_slot1_end_text
+    state: '{% set hours = (states(''sensor.energyua_22_tomorrow_hours'') | from_json if (has_value(''sensor.energyua_22_tomorrow_hours'')
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowDate'') == (now().date() + timedelta(days=1)).isoformat()
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowStatus'') == ''ScheduleApplies'') else []) %} {% set
+      ns = namespace(bits=[], periods=[], start=none) %} {% for v in hours %}{% set ns.bits = ns.bits + [v in [1,2], v in
+      [1,3]] %}{% endfor %} {% for on in ns.bits %}{% if on and ns.start is none %}{% set ns.start = loop.index0 %}{% elif
+      not on and ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, loop.index0]] %}{% set ns.start = none
+      %}{% endif %}{% endfor %} {% if ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, 48]] %}{% endif
+      %} {% if ns.periods | length > 0 %}{{ ''%02d:%02d'' | format(ns.periods[0][1] // 2, (ns.periods[0][1] % 2) * 30) }}{%
+      endif %}'
+    availability: '{{ (states(''sensor.energyua_22_tomorrow_hours'') | from_json if (has_value(''sensor.energyua_22_tomorrow_hours'')
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowDate'') == (now().date() + timedelta(days=1)).isoformat()
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowStatus'') == ''ScheduleApplies'') else []) | count ==
+      24 }}'
+  - name: energyua_22_tomorrow_slot2_start_text
+    unique_id: energyua_22_tomorrow_slot2_start_text
+    state: '{% set hours = (states(''sensor.energyua_22_tomorrow_hours'') | from_json if (has_value(''sensor.energyua_22_tomorrow_hours'')
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowDate'') == (now().date() + timedelta(days=1)).isoformat()
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowStatus'') == ''ScheduleApplies'') else []) %} {% set
+      ns = namespace(bits=[], periods=[], start=none) %} {% for v in hours %}{% set ns.bits = ns.bits + [v in [1,2], v in
+      [1,3]] %}{% endfor %} {% for on in ns.bits %}{% if on and ns.start is none %}{% set ns.start = loop.index0 %}{% elif
+      not on and ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, loop.index0]] %}{% set ns.start = none
+      %}{% endif %}{% endfor %} {% if ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, 48]] %}{% endif
+      %} {% if ns.periods | length > 1 %}{{ ''%02d:%02d'' | format(ns.periods[1][0] // 2, (ns.periods[1][0] % 2) * 30) }}{%
+      endif %}'
+    availability: '{{ (states(''sensor.energyua_22_tomorrow_hours'') | from_json if (has_value(''sensor.energyua_22_tomorrow_hours'')
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowDate'') == (now().date() + timedelta(days=1)).isoformat()
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowStatus'') == ''ScheduleApplies'') else []) | count ==
+      24 }}'
+  - name: energyua_22_tomorrow_slot2_end_text
+    unique_id: energyua_22_tomorrow_slot2_end_text
+    state: '{% set hours = (states(''sensor.energyua_22_tomorrow_hours'') | from_json if (has_value(''sensor.energyua_22_tomorrow_hours'')
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowDate'') == (now().date() + timedelta(days=1)).isoformat()
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowStatus'') == ''ScheduleApplies'') else []) %} {% set
+      ns = namespace(bits=[], periods=[], start=none) %} {% for v in hours %}{% set ns.bits = ns.bits + [v in [1,2], v in
+      [1,3]] %}{% endfor %} {% for on in ns.bits %}{% if on and ns.start is none %}{% set ns.start = loop.index0 %}{% elif
+      not on and ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, loop.index0]] %}{% set ns.start = none
+      %}{% endif %}{% endfor %} {% if ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, 48]] %}{% endif
+      %} {% if ns.periods | length > 1 %}{{ ''%02d:%02d'' | format(ns.periods[1][1] // 2, (ns.periods[1][1] % 2) * 30) }}{%
+      endif %}'
+    availability: '{{ (states(''sensor.energyua_22_tomorrow_hours'') | from_json if (has_value(''sensor.energyua_22_tomorrow_hours'')
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowDate'') == (now().date() + timedelta(days=1)).isoformat()
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowStatus'') == ''ScheduleApplies'') else []) | count ==
+      24 }}'
+  - name: energyua_22_today_slot1_duration_h_text
+    unique_id: energyua_22_today_slot1_duration_h_text
+    unit_of_measurement: год
+    state: '{{ states(''sensor.energyua_22_today_slot1_duration_h'') }}'
+    availability: '{{ has_value(''sensor.energyua_22_today_slot1_duration_h'') and states(''sensor.energyua_22_today_slot1_start_text'') | trim != '''' and states(''sensor.energyua_22_today_slot1_end_text'')
+      | trim != '''' and (states(''sensor.energyua_22_today_hours'') | from_json if (has_value(''sensor.energyua_22_today_hours'')
+      and state_attr(''sensor.energyua_22_today_hours'', ''todayDate'') == now().date().isoformat() and state_attr(''sensor.energyua_22_today_hours'',
+      ''todayStatus'') == ''ScheduleApplies'') else []) | count == 24 }}'
+  - name: energyua_22_today_slot2_duration_h_text
+    unique_id: energyua_22_today_slot2_duration_h_text
+    unit_of_measurement: год
+    state: '{{ states(''sensor.energyua_22_today_slot2_duration_h'') }}'
+    availability: '{{ has_value(''sensor.energyua_22_today_slot2_duration_h'') and states(''sensor.energyua_22_today_slot2_start_text'') | trim != '''' and states(''sensor.energyua_22_today_slot2_end_text'')
+      | trim != '''' and (states(''sensor.energyua_22_today_hours'') | from_json if (has_value(''sensor.energyua_22_today_hours'')
+      and state_attr(''sensor.energyua_22_today_hours'', ''todayDate'') == now().date().isoformat() and state_attr(''sensor.energyua_22_today_hours'',
+      ''todayStatus'') == ''ScheduleApplies'') else []) | count == 24 }}'
+  - name: energyua_22_tomorrow_slot1_duration_h_text
+    unique_id: energyua_22_tomorrow_slot1_duration_h_text
+    unit_of_measurement: год
+    state: '{{ states(''sensor.energyua_22_tomorrow_slot1_duration_h'') }}'
+    availability: '{{ has_value(''sensor.energyua_22_tomorrow_slot1_duration_h'') and states(''sensor.energyua_22_tomorrow_slot1_start_text'') | trim != '''' and states(''sensor.energyua_22_tomorrow_slot1_end_text'')
+      | trim != '''' and (states(''sensor.energyua_22_tomorrow_hours'') | from_json if (has_value(''sensor.energyua_22_tomorrow_hours'')
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowDate'') == (now().date() + timedelta(days=1)).isoformat()
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowStatus'') == ''ScheduleApplies'') else []) | count ==
+      24 }}'
+  - name: energyua_22_tomorrow_slot2_duration_h_text
+    unique_id: energyua_22_tomorrow_slot2_duration_h_text
+    unit_of_measurement: год
+    state: '{{ states(''sensor.energyua_22_tomorrow_slot2_duration_h'') }}'
+    availability: '{{ has_value(''sensor.energyua_22_tomorrow_slot2_duration_h'') and states(''sensor.energyua_22_tomorrow_slot2_start_text'') | trim != '''' and states(''sensor.energyua_22_tomorrow_slot2_end_text'')
+      | trim != '''' and (states(''sensor.energyua_22_tomorrow_hours'') | from_json if (has_value(''sensor.energyua_22_tomorrow_hours'')
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowDate'') == (now().date() + timedelta(days=1)).isoformat()
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowStatus'') == ''ScheduleApplies'') else []) | count ==
+      24 }}'
+  - name: energyua_22_tomorrow_fresh
+    unique_id: energyua_22_tomorrow_fresh
+    state: '{{ (states(''sensor.energyua_22_tomorrow_hours'') | from_json if (has_value(''sensor.energyua_22_tomorrow_hours'')
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowDate'') == (now().date() + timedelta(days=1)).isoformat()
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowStatus'') == ''ScheduleApplies'') else []) | count ==
+      24 }}'
+  - name: energyua_22_today_slot1_start
+    unique_id: energyua_22_today_slot1_start
+    device_class: timestamp
+    state: |-
+      {% set t = states('sensor.energyua_22_today_slot1_start_text')|trim %} {% if t and t|regex_match('^\\d{1,2}[:.]\\d{2}$') %}
+        {{ today_at((t if ':' in t else t|replace('.',':')) ~ ':00') }}
+      {% endif %}
+    availability: '{{ states(''sensor.energyua_22_today_slot1_start_text'') | trim != '''' and (states(''sensor.energyua_22_today_hours'')
+      | from_json if (has_value(''sensor.energyua_22_today_hours'') and state_attr(''sensor.energyua_22_today_hours'', ''todayDate'')
+      == now().date().isoformat() and state_attr(''sensor.energyua_22_today_hours'', ''todayStatus'') == ''ScheduleApplies'')
+      else []) | count == 24 }}'
+  - name: energyua_22_today_slot1_end
+    unique_id: energyua_22_today_slot1_end
+    device_class: timestamp
+    state: |-
+      {% set t = states('sensor.energyua_22_today_slot1_end_text')|trim %} {% if t == '24:00' %}
+        {{ today_at('00:00:00') + timedelta(days=1) }}
+      {% elif t and t|regex_match('^\\d{1,2}[:.]\\d{2}$') %}
+        {{ today_at((t if ':' in t else t|replace('.',':')) ~ ':00') }}
+      {% endif %}
+    availability: '{{ states(''sensor.energyua_22_today_slot1_end_text'') | trim != '''' and (states(''sensor.energyua_22_today_hours'')
+      | from_json if (has_value(''sensor.energyua_22_today_hours'') and state_attr(''sensor.energyua_22_today_hours'', ''todayDate'')
+      == now().date().isoformat() and state_attr(''sensor.energyua_22_today_hours'', ''todayStatus'') == ''ScheduleApplies'')
+      else []) | count == 24 }}'
+  - name: energyua_22_today_slot1_duration_h
+    unique_id: energyua_22_today_slot1_duration_h
+    unit_of_measurement: год
+    state: |-
+      {% set s = states('sensor.energyua_22_today_slot1_start') %} {% set e = states('sensor.energyua_22_today_slot1_end') %} {% set bad = ['unknown','unavailable','none','','None'] %} {% if s not in bad and e not in bad and as_datetime(s) and as_datetime(e) %}
+        {% set diff = (as_datetime(e) - as_datetime(s)).total_seconds() / 3600 %}
+        {{ diff | round(2) }}
+      {% endif %}
+    availability: '{{ states(''sensor.energyua_22_today_slot1_start_text'') | trim != '''' and states(''sensor.energyua_22_today_slot1_end_text'')
+      | trim != '''' and (states(''sensor.energyua_22_today_hours'') | from_json if (has_value(''sensor.energyua_22_today_hours'')
+      and state_attr(''sensor.energyua_22_today_hours'', ''todayDate'') == now().date().isoformat() and state_attr(''sensor.energyua_22_today_hours'',
+      ''todayStatus'') == ''ScheduleApplies'') else []) | count == 24 }}'
+  - name: energyua_22_today_slot2_start
+    unique_id: energyua_22_today_slot2_start
+    device_class: timestamp
+    state: |-
+      {% set t = states('sensor.energyua_22_today_slot2_start_text')|trim %} {% if t and t|regex_match('^\\d{1,2}[:.]\\d{2}$') %}
+        {{ today_at((t if ':' in t else t|replace('.',':')) ~ ':00') }}
+      {% endif %}
+    availability: '{{ states(''sensor.energyua_22_today_slot2_start_text'') | trim != '''' and (states(''sensor.energyua_22_today_hours'')
+      | from_json if (has_value(''sensor.energyua_22_today_hours'') and state_attr(''sensor.energyua_22_today_hours'', ''todayDate'')
+      == now().date().isoformat() and state_attr(''sensor.energyua_22_today_hours'', ''todayStatus'') == ''ScheduleApplies'')
+      else []) | count == 24 }}'
+  - name: energyua_22_today_slot2_end
+    unique_id: energyua_22_today_slot2_end
+    device_class: timestamp
+    state: |-
+      {% set t = states('sensor.energyua_22_today_slot2_end_text')|trim %} {% if t == '24:00' %}
+        {{ today_at('00:00:00') + timedelta(days=1) }}
+      {% elif t and t|regex_match('^\\d{1,2}[:.]\\d{2}$') %}
+        {{ today_at((t if ':' in t else t|replace('.',':')) ~ ':00') }}
+      {% endif %}
+    availability: '{{ states(''sensor.energyua_22_today_slot2_end_text'') | trim != '''' and (states(''sensor.energyua_22_today_hours'')
+      | from_json if (has_value(''sensor.energyua_22_today_hours'') and state_attr(''sensor.energyua_22_today_hours'', ''todayDate'')
+      == now().date().isoformat() and state_attr(''sensor.energyua_22_today_hours'', ''todayStatus'') == ''ScheduleApplies'')
+      else []) | count == 24 }}'
+  - name: energyua_22_today_slot2_duration_h
+    unique_id: energyua_22_today_slot2_duration_h
+    unit_of_measurement: год
+    state: |-
+      {% set s = states('sensor.energyua_22_today_slot2_start') %} {% set e = states('sensor.energyua_22_today_slot2_end') %} {% set bad = ['unknown','unavailable','none','','None'] %} {% if s not in bad and e not in bad and as_datetime(s) and as_datetime(e) %}
+        {% set diff = (as_datetime(e) - as_datetime(s)).total_seconds() / 3600 %}
+        {{ diff | round(2) }}
+      {% endif %}
+    availability: '{{ states(''sensor.energyua_22_today_slot2_start_text'') | trim != '''' and states(''sensor.energyua_22_today_slot2_end_text'')
+      | trim != '''' and (states(''sensor.energyua_22_today_hours'') | from_json if (has_value(''sensor.energyua_22_today_hours'')
+      and state_attr(''sensor.energyua_22_today_hours'', ''todayDate'') == now().date().isoformat() and state_attr(''sensor.energyua_22_today_hours'',
+      ''todayStatus'') == ''ScheduleApplies'') else []) | count == 24 }}'
+  - name: energyua_22_tomorrow_slot1_start
+    unique_id: energyua_22_tomorrow_slot1_start
+    device_class: timestamp
+    availability: '{{ states(''sensor.energyua_22_tomorrow_slot1_start_text'') | trim != '''' and (states(''sensor.energyua_22_tomorrow_hours'')
+      | from_json if (has_value(''sensor.energyua_22_tomorrow_hours'') and state_attr(''sensor.energyua_22_tomorrow_hours'',
+      ''tomorrowDate'') == (now().date() + timedelta(days=1)).isoformat() and state_attr(''sensor.energyua_22_tomorrow_hours'',
+      ''tomorrowStatus'') == ''ScheduleApplies'') else []) | count == 24 }}'
+    state: |-
+      {% set t = states('sensor.energyua_22_tomorrow_slot1_start_text')|trim %} {% if t and t|regex_match('^\\d{1,2}[:.]\\d{2}$') %}
+        {{ today_at((t if ':' in t else t|replace('.',':')) ~ ':00') + timedelta(days=1) }}
+      {% endif %}
+  - name: energyua_22_tomorrow_slot1_end
+    unique_id: energyua_22_tomorrow_slot1_end
+    device_class: timestamp
+    availability: '{{ states(''sensor.energyua_22_tomorrow_slot1_end_text'') | trim != '''' and (states(''sensor.energyua_22_tomorrow_hours'')
+      | from_json if (has_value(''sensor.energyua_22_tomorrow_hours'') and state_attr(''sensor.energyua_22_tomorrow_hours'',
+      ''tomorrowDate'') == (now().date() + timedelta(days=1)).isoformat() and state_attr(''sensor.energyua_22_tomorrow_hours'',
+      ''tomorrowStatus'') == ''ScheduleApplies'') else []) | count == 24 }}'
+    state: |-
+      {% set t = states('sensor.energyua_22_tomorrow_slot1_end_text')|trim %} {% if t == '24:00' %}
+        {{ today_at('00:00:00') + timedelta(days=2) }}
+      {% elif t and t|regex_match('^\\d{1,2}[:.]\\d{2}$') %}
+        {{ today_at((t if ':' in t else t|replace('.',':')) ~ ':00') + timedelta(days=1) }}
+      {% endif %}
+  - name: energyua_22_tomorrow_slot1_duration_h
+    unique_id: energyua_22_tomorrow_slot1_duration_h
+    unit_of_measurement: год
+    availability: '{{ states(''sensor.energyua_22_tomorrow_slot1_start_text'') | trim != '''' and states(''sensor.energyua_22_tomorrow_slot1_end_text'')
+      | trim != '''' and (states(''sensor.energyua_22_tomorrow_hours'') | from_json if (has_value(''sensor.energyua_22_tomorrow_hours'')
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowDate'') == (now().date() + timedelta(days=1)).isoformat()
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowStatus'') == ''ScheduleApplies'') else []) | count ==
+      24 }}'
+    state: |-
+      {% set s = states('sensor.energyua_22_tomorrow_slot1_start') %} {% set e = states('sensor.energyua_22_tomorrow_slot1_end') %} {% set bad = ['unknown','unavailable','none','','None'] %} {% if s not in bad and e not in bad and as_datetime(s) and as_datetime(e) %}
+        {% set diff = (as_datetime(e) - as_datetime(s)).total_seconds() / 3600 %}
+        {{ diff | round(2) }}
+      {% endif %}
+  - name: energyua_22_tomorrow_slot2_start
+    unique_id: energyua_22_tomorrow_slot2_start
+    device_class: timestamp
+    availability: '{{ states(''sensor.energyua_22_tomorrow_slot2_start_text'') | trim != '''' and (states(''sensor.energyua_22_tomorrow_hours'')
+      | from_json if (has_value(''sensor.energyua_22_tomorrow_hours'') and state_attr(''sensor.energyua_22_tomorrow_hours'',
+      ''tomorrowDate'') == (now().date() + timedelta(days=1)).isoformat() and state_attr(''sensor.energyua_22_tomorrow_hours'',
+      ''tomorrowStatus'') == ''ScheduleApplies'') else []) | count == 24 }}'
+    state: |-
+      {% set t = states('sensor.energyua_22_tomorrow_slot2_start_text')|trim %} {% if t and t|regex_match('^\\d{1,2}[:.]\\d{2}$') %}
+        {{ today_at((t if ':' in t else t|replace('.',':')) ~ ':00') + timedelta(days=1) }}
+      {% endif %}
+  - name: energyua_22_tomorrow_slot2_end
+    unique_id: energyua_22_tomorrow_slot2_end
+    device_class: timestamp
+    availability: '{{ states(''sensor.energyua_22_tomorrow_slot2_end_text'') | trim != '''' and (states(''sensor.energyua_22_tomorrow_hours'')
+      | from_json if (has_value(''sensor.energyua_22_tomorrow_hours'') and state_attr(''sensor.energyua_22_tomorrow_hours'',
+      ''tomorrowDate'') == (now().date() + timedelta(days=1)).isoformat() and state_attr(''sensor.energyua_22_tomorrow_hours'',
+      ''tomorrowStatus'') == ''ScheduleApplies'') else []) | count == 24 }}'
+    state: |-
+      {% set t = states('sensor.energyua_22_tomorrow_slot2_end_text')|trim %} {% if t == '24:00' %}
+        {{ today_at('00:00:00') + timedelta(days=2) }}
+      {% elif t and t|regex_match('^\\d{1,2}[:.]\\d{2}$') %}
+        {{ today_at((t if ':' in t else t|replace('.',':')) ~ ':00') + timedelta(days=1) }}
+      {% endif %}
+  - name: energyua_22_tomorrow_slot2_duration_h
+    unique_id: energyua_22_tomorrow_slot2_duration_h
+    unit_of_measurement: год
+    availability: '{{ states(''sensor.energyua_22_tomorrow_slot2_start_text'') | trim != '''' and states(''sensor.energyua_22_tomorrow_slot2_end_text'')
+      | trim != '''' and (states(''sensor.energyua_22_tomorrow_hours'') | from_json if (has_value(''sensor.energyua_22_tomorrow_hours'')
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowDate'') == (now().date() + timedelta(days=1)).isoformat()
+      and state_attr(''sensor.energyua_22_tomorrow_hours'', ''tomorrowStatus'') == ''ScheduleApplies'') else []) | count ==
+      24 }}'
+    state: |-
+      {% set s = states('sensor.energyua_22_tomorrow_slot2_start') %} {% set e = states('sensor.energyua_22_tomorrow_slot2_end') %} {% set bad = ['unknown','unavailable','none','','None'] %} {% if s not in bad and e not in bad and as_datetime(s) and as_datetime(e) %}
+        {% set diff = (as_datetime(e) - as_datetime(s)).total_seconds() / 3600 %}
+        {{ diff | round(2) }}
+      {% endif %}
+  - name: energyua_22_today_brief
+    unique_id: energyua_22_today_brief
+    icon: mdi:calendar-today
+    state: |-
+      {% set hours = (states('sensor.energyua_22_today_hours') | from_json if (has_value('sensor.energyua_22_today_hours') and state_attr('sensor.energyua_22_today_hours', 'todayDate') == now().date().isoformat() and state_attr('sensor.energyua_22_today_hours', 'todayStatus') == 'ScheduleApplies') else []) %}
+      {% set ns = namespace(bits=[], periods=[], start=none, result=[]) %}
+      {% for v in hours %}{% set ns.bits = ns.bits + [v in [1,2], v in [1,3]] %}{% endfor %}
+      {% for on in ns.bits %}
+        {% if on and ns.start is none %}{% set ns.start = loop.index0 %}
+        {% elif not on and ns.start is not none %}
+          {% set ns.periods = ns.periods + [[ns.start, loop.index0]] %}{% set ns.start = none %}
+        {% endif %}
+      {% endfor %}
+      {% if ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, 48]] %}{% endif %}
+      {% for start,end in ns.periods %}
+        {% set ns.result = ns.result + ['%02d:%02d–%02d:%02d' | format(start // 2, start % 2 * 30, end // 2, end % 2 * 30)] %}
+      {% endfor %}
+      {% set text = ns.result | join('; ') %}
+      {% if hours | count != 24 %}Даних на сьогодні немає
+      {% elif not ns.result %}Без відключень
+      {% elif text | length <= 255 %}{{ text }}
+      {% else %}{{ ns.result[:18] | join('; ') }}; … (+{{ ns.result | count - 18 }}){% endif %}
+    attributes:
+      periods: |-
+        {% set hours = (states('sensor.energyua_22_today_hours') | from_json if (has_value('sensor.energyua_22_today_hours') and state_attr('sensor.energyua_22_today_hours', 'todayDate') == now().date().isoformat() and state_attr('sensor.energyua_22_today_hours', 'todayStatus') == 'ScheduleApplies') else []) %}
+        {% set ns = namespace(bits=[], periods=[], start=none, result=[]) %}
+        {% for v in hours %}{% set ns.bits = ns.bits + [v in [1,2], v in [1,3]] %}{% endfor %}
+        {% for on in ns.bits %}
+          {% if on and ns.start is none %}{% set ns.start = loop.index0 %}
+          {% elif not on and ns.start is not none %}
+            {% set ns.periods = ns.periods + [[ns.start, loop.index0]] %}{% set ns.start = none %}
           {% endif %}
-
-      energyua_22_today_slot1_end:
-        friendly_name: "Сьогодні: кінець 1-го періоду"
-        device_class: timestamp
-        value_template: >-
-          {% set t = states('sensor.energyua_22_today_slot1_end_text')|trim %}
-          {% if t == '24:00' %}
-            {{ today_at('00:00:00') + timedelta(days=1) }}
-          {% elif t and t|regex_match('^\\d{1,2}[:.]\\d{2}$') %}
-            {{ today_at((t if ':' in t else t|replace('.',':')) ~ ':00') }}
+        {% endfor %}
+        {% if ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, 48]] %}{% endif %}
+        {% for start,end in ns.periods %}
+          {% set ns.result = ns.result + [{'start': '%02d:%02d' | format(start // 2, start % 2 * 30), 'end': '%02d:%02d' | format(end // 2, end % 2 * 30)}] %}
+        {% endfor %}
+        {{ ns.result }}
+  - name: energyua_22_tomorrow_brief
+    unique_id: energyua_22_tomorrow_brief
+    icon: mdi:calendar-clock
+    state: |-
+      {% set hours = (states('sensor.energyua_22_tomorrow_hours') | from_json if (has_value('sensor.energyua_22_tomorrow_hours') and state_attr('sensor.energyua_22_tomorrow_hours', 'tomorrowDate') == (now().date() + timedelta(days=1)).isoformat() and state_attr('sensor.energyua_22_tomorrow_hours', 'tomorrowStatus') == 'ScheduleApplies') else []) %}
+      {% set ns = namespace(bits=[], periods=[], start=none, result=[]) %}
+      {% for v in hours %}{% set ns.bits = ns.bits + [v in [1,2], v in [1,3]] %}{% endfor %}
+      {% for on in ns.bits %}
+        {% if on and ns.start is none %}{% set ns.start = loop.index0 %}
+        {% elif not on and ns.start is not none %}
+          {% set ns.periods = ns.periods + [[ns.start, loop.index0]] %}{% set ns.start = none %}
+        {% endif %}
+      {% endfor %}
+      {% if ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, 48]] %}{% endif %}
+      {% for start,end in ns.periods %}
+        {% set ns.result = ns.result + ['%02d:%02d–%02d:%02d' | format(start // 2, start % 2 * 30, end // 2, end % 2 * 30)] %}
+      {% endfor %}
+      {% set text = ns.result | join('; ') %}
+      {% if hours | count != 24 %}Даних на завтра немає
+      {% elif not ns.result %}Без відключень
+      {% elif text | length <= 255 %}{{ text }}
+      {% else %}{{ ns.result[:18] | join('; ') }}; … (+{{ ns.result | count - 18 }}){% endif %}
+    attributes:
+      periods: |-
+        {% set hours = (states('sensor.energyua_22_tomorrow_hours') | from_json if (has_value('sensor.energyua_22_tomorrow_hours') and state_attr('sensor.energyua_22_tomorrow_hours', 'tomorrowDate') == (now().date() + timedelta(days=1)).isoformat() and state_attr('sensor.energyua_22_tomorrow_hours', 'tomorrowStatus') == 'ScheduleApplies') else []) %}
+        {% set ns = namespace(bits=[], periods=[], start=none, result=[]) %}
+        {% for v in hours %}{% set ns.bits = ns.bits + [v in [1,2], v in [1,3]] %}{% endfor %}
+        {% for on in ns.bits %}
+          {% if on and ns.start is none %}{% set ns.start = loop.index0 %}
+          {% elif not on and ns.start is not none %}
+            {% set ns.periods = ns.periods + [[ns.start, loop.index0]] %}{% set ns.start = none %}
           {% endif %}
-
-      # Розрахунок тривалості слота 1 = (end - start) у годинах
-      energyua_22_today_slot1_duration_h:
-        friendly_name: "Сьогодні: тривалість 1-го, год"
-        unit_of_measurement: "год"
-        value_template: >-
-          {% set s = states('sensor.energyua_22_today_slot1_start') %}
-          {% set e = states('sensor.energyua_22_today_slot1_end') %}
-          {% set bad = ['unknown','unavailable','none','','None'] %}
-          {% if s not in bad and e not in bad and as_datetime(s) and as_datetime(e) %}
-            {% set diff = (as_datetime(e) - as_datetime(s)).total_seconds() / 3600 %}
-            {{ diff | round(2) }}
-          {% endif %}
-
-      # ===== СЬОГОДНІ: слот 2 =====
-      energyua_22_today_slot2_start:
-        friendly_name: "Сьогодні: початок 2-го періоду"
-        device_class: timestamp
-        value_template: >-
-          {% set t = states('sensor.energyua_22_today_slot2_start_text')|trim %}
-          {% if t and t|regex_match('^\\d{1,2}[:.]\\d{2}$') %}
-            {{ today_at((t if ':' in t else t|replace('.',':')) ~ ':00') }}
-          {% endif %}
-
-      energyua_22_today_slot2_end:
-        friendly_name: "Сьогодні: кінець 2-го періоду"
-        device_class: timestamp
-        value_template: >-
-          {% set t = states('sensor.energyua_22_today_slot2_end_text')|trim %}
-          {% if t == '24:00' %}
-            {{ today_at('00:00:00') + timedelta(days=1) }}
-          {% elif t and t|regex_match('^\\d{1,2}[:.]\\d{2}$') %}
-            {{ today_at((t if ':' in t else t|replace('.',':')) ~ ':00') }}
-          {% endif %}
-
-      energyua_22_today_slot2_duration_h:
-        friendly_name: "Сьогодні: тривалість 2-го, год"
-        unit_of_measurement: "год"
-        value_template: >-
-          {% set s = states('sensor.energyua_22_today_slot2_start') %}
-          {% set e = states('sensor.energyua_22_today_slot2_end') %}
-          {% set bad = ['unknown','unavailable','none','','None'] %}
-          {% if s not in bad and e not in bad and as_datetime(s) and as_datetime(e) %}
-            {% set diff = (as_datetime(e) - as_datetime(s)).total_seconds() / 3600 %}
-            {{ diff | round(2) }}
-          {% endif %}
-
-      # ===== ЗАВТРА =====
-      energyua_22_tomorrow_slot1_start:
-        friendly_name: "Завтра: початок 1-го періоду"
-        device_class: timestamp
-        availability_template: "{{ is_state('sensor.energyua_22_tomorrow_fresh','True') }}"
-        value_template: >-
-          {% set t = states('sensor.energyua_22_tomorrow_slot1_start_text')|trim %}
-          {% if t and t|regex_match('^\\d{1,2}[:.]\\d{2}$') %}
-            {{ today_at((t if ':' in t else t|replace('.',':')) ~ ':00') + timedelta(days=1) }}
-          {% endif %}
-
-      energyua_22_tomorrow_slot1_end:
-        friendly_name: "Завтра: кінець 1-го періоду"
-        device_class: timestamp
-        availability_template: "{{ is_state('sensor.energyua_22_tomorrow_fresh','True') }}"
-        value_template: >-
-          {% set t = states('sensor.energyua_22_tomorrow_slot1_end_text')|trim %}
-          {% if t == '24:00' %}
-            {{ today_at('00:00:00') + timedelta(days=2) }}
-          {% elif t and t|regex_match('^\\d{1,2}[:.]\\d{2}$') %}
-            {{ today_at((t if ':' in t else t|replace('.',':')) ~ ':00') + timedelta(days=1) }}
-          {% endif %}
-
-      energyua_22_tomorrow_slot1_duration_h:
-        friendly_name: "Завтра: тривалість 1-го, год"
-        unit_of_measurement: "год"
-        availability_template: "{{ is_state('sensor.energyua_22_tomorrow_fresh','True') }}"
-        value_template: >-
-          {% set s = states('sensor.energyua_22_tomorrow_slot1_start') %}
-          {% set e = states('sensor.energyua_22_tomorrow_slot1_end') %}
-          {% set bad = ['unknown','unavailable','none','','None'] %}
-          {% if s not in bad and e not in bad and as_datetime(s) and as_datetime(e) %}
-            {% set diff = (as_datetime(e) - as_datetime(s)).total_seconds() / 3600 %}
-            {{ diff | round(2) }}
-          {% endif %}
-
-      energyua_22_tomorrow_slot2_start:
-        friendly_name: "Завтра: початок 2-го періоду"
-        device_class: timestamp
-        availability_template: "{{ is_state('sensor.energyua_22_tomorrow_fresh','True') }}"
-        value_template: >-
-          {% set t = states('sensor.energyua_22_tomorrow_slot2_start_text')|trim %}
-          {% if t and t|regex_match('^\\d{1,2}[:.]\\d{2}$') %}
-            {{ today_at((t if ':' in t else t|replace('.',':')) ~ ':00') + timedelta(days=1) }}
-          {% endif %}
-
-      energyua_22_tomorrow_slot2_end:
-        friendly_name: "Завтра: кінець 2-го періоду"
-        device_class: timestamp
-        availability_template: "{{ is_state('sensor.energyua_22_tomorrow_fresh','True') }}"
-        value_template: >-
-          {% set t = states('sensor.energyua_22_tomorrow_slot2_end_text')|trim %}
-          {% if t == '24:00' %}
-            {{ today_at('00:00:00') + timedelta(days=2) }}
-          {% elif t and t|regex_match('^\\d{1,2}[:.]\\d{2}$') %}
-            {{ today_at((t if ':' in t else t|replace('.',':')) ~ ':00') + timedelta(days=1) }}
-          {% endif %}
-
-      energyua_22_tomorrow_slot2_duration_h:
-        friendly_name: "Завтра: тривалість 2-го, год"
-        unit_of_measurement: "год"
-        availability_template: "{{ is_state('sensor.energyua_22_tomorrow_fresh','True') }}"
-        value_template: >-
-          {% set s = states('sensor.energyua_22_tomorrow_slot2_start') %}
-          {% set e = states('sensor.energyua_22_tomorrow_slot2_end') %}
-          {% set bad = ['unknown','unavailable','none','','None'] %}
-          {% if s not in bad and e not in bad and as_datetime(s) and as_datetime(e) %}
-            {% set diff = (as_datetime(e) - as_datetime(s)).total_seconds() / 3600 %}
-            {{ diff | round(2) }}
-          {% endif %}
-
-      # ===== СЬОГОДНІ: коротко =====
-      energyua_22_today_brief:
-        friendly_name: "Сьогодні: коротко"
-        icon_template: mdi:calendar-today
-        value_template: >-
-          {% set bad = ['unknown','unavailable','none','','None'] %}
-
-          {% set s1 = states('sensor.energyua_22_today_slot1_start') %}
-          {% set e1 = states('sensor.energyua_22_today_slot1_end') %}
-          {% set s2 = states('sensor.energyua_22_today_slot2_start') %}
-          {% set e2 = states('sensor.energyua_22_today_slot2_end') %}
-
-          {% set r1 = '' %}
-          {% if s1 not in bad and e1 not in bad and as_datetime(s1) and as_datetime(e1) %}
-            {% set s_txt = (as_timestamp(as_datetime(s1)|as_local) | timestamp_custom('%H:%M')) %}
-            {% set e_txt = (as_timestamp(as_datetime(e1)|as_local) | timestamp_custom('%H:%M')) %}
-            {% set dur = ((as_datetime(e1)-as_datetime(s1)).total_seconds()/3600) | round(2) %}
-            {% set r1 = 'З ' ~ s_txt ~ ' до ' ~ e_txt ~ ' (' ~ dur ~ ' год)' %}
-          {% endif %}
-
-          {% set r2 = '' %}
-          {% if s2 not in bad and e2 not in bad and as_datetime(s2) and as_datetime(e2) %}
-            {% set s_txt = (as_timestamp(as_datetime(s2)|as_local) | timestamp_custom('%H:%M')) %}
-            {% set e_txt = (as_timestamp(as_datetime(e2)|as_local) | timestamp_custom('%H:%M')) %}
-            {% set dur = ((as_datetime(e2)-as_datetime(s2)).total_seconds()/3600) | round(2) %}
-            {% set r2 = 'З ' ~ s_txt ~ ' до ' ~ e_txt ~ ' (' ~ dur ~ ' год)' %}
-          {% endif %}
-
-          {% if r1 and r2 %}{{ r1 ~ ';\n' ~ r2 }}
-          {% elif r1 %}{{ r1 }}
-          {% elif r2 %}{{ r2 }}
-          {% else %}Даних на сьогодні немає{% endif %}
-
-      # ===== ЗАВТРА: коротко =====
-      # ВАЖЛИВО: тут БІЛЬШЕ НЕМАЄ availability_template.
-      # Тобто навіть якщо завтра ще не опублікували графік і tomorrow_fresh == False,
-      # сенсор все одно існує і віддає "Даних на завтра немає".
-      energyua_22_tomorrow_brief:
-        friendly_name: "Завтра: коротко"
-        icon_template: mdi:calendar-clock
-        value_template: >-
-          {% set bad = ['unknown','unavailable','none','','None'] %}
-
-          {% set s1 = states('sensor.energyua_22_tomorrow_slot1_start') %}
-          {% set e1 = states('sensor.energyua_22_tomorrow_slot1_end') %}
-          {% set s2 = states('sensor.energyua_22_tomorrow_slot2_start') %}
-          {% set e2 = states('sensor.energyua_22_tomorrow_slot2_end') %}
-
-          {% set r1 = '' %}
-          {% if s1 not in bad and e1 not in bad and as_datetime(s1) and as_datetime(e1) %}
-            {% set s_txt = (as_timestamp(as_datetime(s1)|as_local) | timestamp_custom('%H:%M')) %}
-            {% set e_txt = (as_timestamp(as_datetime(e1)|as_local) | timestamp_custom('%H:%M')) %}
-            {% set dur = ((as_datetime(e1)-as_datetime(s1)).total_seconds()/3600) | round(2) %}
-            {% set r1 = 'З ' ~ s_txt ~ ' до ' ~ e_txt ~ ' (' ~ dur ~ ' год)' %}
-          {% endif %}
-
-          {% set r2 = '' %}
-          {% if s2 not in bad and e2 not in bad and as_datetime(s2) and as_datetime(e2) %}
-            {% set s_txt = (as_timestamp(as_datetime(s2)|as_local) | timestamp_custom('%H:%M')) %}
-            {% set e_txt = (as_timestamp(as_datetime(e2)|as_local) | timestamp_custom('%H:%M')) %}
-            {% set dur = ((as_datetime(e2)-as_datetime(s2)).total_seconds()/3600) | round(2) %}
-            {% set r2 = 'З ' ~ s_txt ~ ' до ' ~ e_txt ~ ' (' ~ dur ~ ' год)' %}
-          {% endif %}
-
-          {% if r1 and r2 %}{{ r1 ~ ';\n' ~ r2 }}
-          {% elif r1 %}{{ r1 }}
-          {% elif r2 %}{{ r2 }}
-          {% else %}Даних на завтра немає{% endif %}
-
-# 3) БІНАРНИК: відключення зараз
-binary_sensor:
-  - platform: template
-    sensors:
-      energyua_22_outage_now:
-        friendly_name: "Відключення зараз"
-        value_template: >-
-          {% set bad = ['unknown','unavailable','none',''] %}
-          {% set nowt = now() %}
-          {% set pairs = [
-            (states('sensor.energyua_22_today_slot1_start'), states('sensor.energyua_22_today_slot1_end')),
-            (states('sensor.energyua_22_today_slot2_start'), states('sensor.energyua_22_today_slot2_end'))
-          ] %}
-          {% set ns = namespace(on=false) %}
-          {% for s,e in pairs %}
-            {% if s not in bad and e not in bad and as_datetime(s) and as_datetime(e)
-                  and nowt >= as_datetime(s) and nowt < as_datetime(e) %}
-              {% set ns.on = true %}
-            {% endif %}
-          {% endfor %}
-          {{ ns.on }}
-        icon_template: >-
-          {{ 'mdi:power-plug-off' if is_state('binary_sensor.energyua_22_outage_now','on') else 'mdi:power-plug' }}
+        {% endfor %}
+        {% if ns.start is not none %}{% set ns.periods = ns.periods + [[ns.start, 48]] %}{% endif %}
+        {% for start,end in ns.periods %}
+          {% set ns.result = ns.result + [{'start': '%02d:%02d' | format(start // 2, start % 2 * 30), 'end': '%02d:%02d' | format(end // 2, end % 2 * 30)}] %}
+        {% endfor %}
+        {{ ns.result }}
+  binary_sensor:
+  - name: energyua_22_outage_now
+    unique_id: energyua_22_outage_now
+    device_class: problem
+    availability: '{{ (states(''sensor.energyua_22_today_hours'') | from_json if (has_value(''sensor.energyua_22_today_hours'')
+      and state_attr(''sensor.energyua_22_today_hours'', ''todayDate'') == now().date().isoformat() and state_attr(''sensor.energyua_22_today_hours'',
+      ''todayStatus'') == ''ScheduleApplies'') else []) | count == 24 }}'
+    state: |-
+      {% set hours = (states('sensor.energyua_22_today_hours') | from_json if (has_value('sensor.energyua_22_today_hours') and state_attr('sensor.energyua_22_today_hours', 'todayDate') == now().date().isoformat() and state_attr('sensor.energyua_22_today_hours', 'todayStatus') == 'ScheduleApplies') else []) %}
+      {% set index = now().hour %}
+      {% set code = hours[index] if hours | count == 24 else none %}
+      {{ code == 1 or (code == 2 and now().minute < 30) or (code == 3 and now().minute >= 30) }}
+    icon: '{{ ''mdi:power-plug-off'' if is_state(''binary_sensor.energyua_22_outage_now'',''on'') else ''mdi:power-plug''
+      }}'
