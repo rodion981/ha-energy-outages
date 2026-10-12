@@ -144,6 +144,13 @@ class AlertsEnergyApi:
     ) -> dict[str, Any]:
         """Return one row; a missing queue remains explicitly unavailable."""
         payload = await self.async_get_schedules(area)
+        return self.select_schedule(payload, operator, queue)
+
+    @staticmethod
+    def select_schedule(
+        payload: list[dict[str, Any]], operator: str, queue: str
+    ) -> dict[str, Any]:
+        """Select the same exact row from an already fetched regional response."""
 
         row = next(
             (

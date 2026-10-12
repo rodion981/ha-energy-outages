@@ -13,7 +13,9 @@ from custom_components.alerts_energy_outages.diagnostics import (
     async_get_config_entry_diagnostics,
 )
 
-FETCH = "custom_components.alerts_energy_outages.api.AlertsEnergyApi.async_get_schedule"
+FETCH = (
+    "custom_components.alerts_energy_outages.api.AlertsEnergyApi.async_get_schedules"
+)
 QUEUES = "custom_components.alerts_energy_outages.api.AlertsEnergyApi.async_get_queues"
 
 
@@ -26,7 +28,7 @@ def entity_ids(hass, entry):
 
 
 async def test_setup_registry_reload(hass, entry, schedule):
-    with patch(FETCH, return_value=schedule):
+    with patch(FETCH, return_value=[schedule]):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
         ids = entity_ids(hass, entry)
@@ -53,7 +55,7 @@ async def test_setup_registry_reload(hass, entry, schedule):
 
 async def test_independent_days(hass, entry, schedule):
     schedule["tomorrow"] = []
-    with patch(FETCH, return_value=schedule):
+    with patch(FETCH, return_value=[schedule]):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
     ids = entity_ids(hass, entry)
@@ -63,7 +65,7 @@ async def test_independent_days(hass, entry, schedule):
 
 
 async def test_transport_failure_recovery(hass, entry, schedule):
-    with patch(FETCH, return_value=schedule) as fetch:
+    with patch(FETCH, return_value=[schedule]) as fetch:
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
         ids = entity_ids(hass, entry)
@@ -81,11 +83,7 @@ async def test_transport_failure_recovery(hass, entry, schedule):
 async def test_missing_queue_loads_unavailable(hass, entry):
     with patch(
         FETCH,
-        return_value={
-            "queue": "2.2",
-            "initiator": DEFAULT_OPERATOR,
-            "schedule_found": False,
-        },
+        return_value=[],
     ):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
@@ -104,7 +102,7 @@ async def test_first_refresh_retry(hass, entry):
 
 async def test_clock_boundary_without_network(hass, entry, schedule, freezer):
     with (
-        patch(FETCH, return_value=schedule) as fetch,
+        patch(FETCH, return_value=[schedule]) as fetch,
         patch(
             "custom_components.alerts_energy_outages.coordinator.SCAN_INTERVAL_SECONDS",
             3600,
@@ -123,7 +121,7 @@ async def test_clock_boundary_without_network(hass, entry, schedule, freezer):
 
 
 async def test_midnight_marks_stale(hass, entry, schedule, freezer):
-    with patch(FETCH, return_value=schedule):
+    with patch(FETCH, return_value=[schedule]):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
         ids = entity_ids(hass, entry)
@@ -137,7 +135,7 @@ async def test_midnight_marks_stale(hass, entry, schedule, freezer):
 
 
 async def test_reconfigure_preserves_registry(hass, entry, schedule, directory):
-    with patch(FETCH, return_value=schedule), patch(QUEUES, return_value=["2.1"]):
+    with patch(FETCH, return_value=[schedule]), patch(QUEUES, return_value=["2.1"]):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
         ids = entity_ids(hass, entry)
@@ -172,7 +170,7 @@ async def test_reconfigure_preserves_registry(hass, entry, schedule, directory):
 
 async def test_long_state_full_attributes(hass, entry, schedule):
     schedule["today"] = [2] * 24
-    with patch(FETCH, return_value=schedule):
+    with patch(FETCH, return_value=[schedule]):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
     state = hass.states.get(entity_ids(hass, entry)["today"])
@@ -182,7 +180,7 @@ async def test_long_state_full_attributes(hass, entry, schedule):
 
 async def test_diagnostics_allowlist(hass, entry, schedule):
     schedule["private_extra"] = "do not export"
-    with patch(FETCH, return_value=schedule):
+    with patch(FETCH, return_value=[schedule]):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
     result = await async_get_config_entry_diagnostics(hass, entry)
@@ -193,7 +191,7 @@ async def test_diagnostics_allowlist(hass, entry, schedule):
 
 async def test_source_timezone_is_independent(hass, entry, schedule):
     await hass.config.async_set_time_zone("America/New_York")
-    with patch(FETCH, return_value=schedule):
+    with patch(FETCH, return_value=[schedule]):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
     assert hass.states.get(entity_ids(hass, entry)["now"]).state == "on"
@@ -201,7 +199,7 @@ async def test_source_timezone_is_independent(hass, entry, schedule):
 
 async def test_ukrainian_zero_outage_state(hass, entry, schedule):
     hass.config.language = "uk"
-    with patch(FETCH, return_value=schedule):
+    with patch(FETCH, return_value=[schedule]):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
     assert (
@@ -312,7 +310,7 @@ async def test_migration_rejects_future_major(hass, entry):
 
 async def test_no_shutdowns_operator_state(hass, entry, schedule):
     schedule.update(today=[0] * 24, todayStatus="NoShutdowns")
-    with patch(FETCH, return_value=schedule):
+    with patch(FETCH, return_value=[schedule]):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
     ids = entity_ids(hass, entry)

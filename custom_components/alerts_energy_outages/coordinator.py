@@ -2,19 +2,23 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
+from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import Any
 
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry, current_entry
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers.event import async_track_utc_time_change
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .api import AlertsEnergyApi, AlertsEnergyApiError
 from .const import (
-    CONF_AREA,
     CONF_OPERATOR,
-    DEFAULT_AREA,
+    DATA_AREAS,
     DEFAULT_OPERATOR,
     DOMAIN,
     SCAN_INTERVAL_SECONDS,
@@ -98,30 +102,151 @@ def schedule_day_status(data: dict[str, Any] | None, day: str) -> str:
     return "published"
 
 
-class AlertsEnergyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
-    """Poll Alerts Energy and share the selected schedule with entities."""
+class AlertsEnergyAreaCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
+    """Own one poller, clock listener and update health per active area."""
 
     def __init__(
         self,
         hass: HomeAssistant,
         api: AlertsEnergyApi,
-        entry: ConfigEntry,
+        area: str,
     ) -> None:
-        super().__init__(
-            hass,
-            logger=_LOGGER,
-            name=DOMAIN,
-            update_interval=timedelta(seconds=SCAN_INTERVAL_SECONDS),
-        )
-        self._api = api
-        self.area = entry.data.get(CONF_AREA, DEFAULT_AREA)
-        self._operator = entry.data.get(CONF_OPERATOR, DEFAULT_OPERATOR)
-        self._queue = entry.data["queue"]
-
-    async def _async_update_data(self) -> dict[str, Any]:
+        # HA 2024.6 captures current_entry implicitly. A shared poller must not
+        # inherit the first entry's unload callback or stop when it is removed.
+        token = current_entry.set(None)
         try:
-            return await self._api.async_get_schedule(
-                self._operator, self._queue, self.area
+            super().__init__(
+                hass,
+                logger=_LOGGER,
+                name=f"{DOMAIN} {area}",
+                update_interval=timedelta(seconds=SCAN_INTERVAL_SECONDS),
             )
+        finally:
+            current_entry.reset(token)
+        self._api = api
+        self.area = area
+        self.users = 0
+        self.last_successful_update: datetime | None = None
+        self._initial_lock = asyncio.Lock()
+        self._unsub_clock: Callable[[], None] | None = async_track_utc_time_change(
+            hass, self._handle_clock, minute=[0, 30], second=0
+        )
+
+    @callback
+    def _handle_clock(self, _now: datetime) -> None:
+        self.async_update_listeners()
+
+    def _schedule_refresh(self) -> None:
+        """Keep the existing disable-polling preference for the shared source."""
+        if any(not entry.pref_disable_polling for entry in self.async_contexts()):
+            super()._schedule_refresh()
+
+    @callback
+    def async_update_polling_schedule(self) -> None:
+        """Reconsider polling after adding or removing an entry subscriber."""
+        self._async_unsub_refresh()
+        if not self._shutdown_requested:
+            self._schedule_refresh()
+
+    async def async_ensure_ready(self) -> None:
+        """Coalesce concurrent first refreshes without caching failed requests."""
+        async with self._initial_lock:
+            if self.data is None or not self.last_update_success:
+                await self.async_refresh()
+                if not self.last_update_success or self.data is None:
+                    raise ConfigEntryNotReady(
+                        str(self.last_exception or "No regional data received")
+                    ) from self.last_exception
+
+    async def _async_update_data(self) -> list[dict[str, Any]]:
+        try:
+            rows = await self._api.async_get_schedules(self.area)
         except AlertsEnergyApiError as err:
             raise UpdateFailed(str(err)) from err
+        self.last_successful_update = dt_util.utcnow()
+        return rows
+
+    async def async_shutdown(self) -> None:
+        if self._unsub_clock is not None:
+            self._unsub_clock()
+            self._unsub_clock = None
+        await super().async_shutdown()
+
+
+async def async_acquire_area(
+    hass: HomeAssistant, api: AlertsEnergyApi, area: str
+) -> AlertsEnergyAreaCoordinator:
+    """Acquire an area before awaiting setup so concurrent entries share it."""
+    areas = hass.data.setdefault(DOMAIN, {}).setdefault(DATA_AREAS, {})
+    source = areas.get(area)
+    if source is None:
+        source = areas[area] = AlertsEnergyAreaCoordinator(hass, api, area)
+        await source.async_register_shutdown()
+    source.users += 1
+    try:
+        await source.async_ensure_ready()
+    except BaseException:
+        await async_release_area(hass, source)
+        raise
+    return source
+
+
+async def async_release_area(
+    hass: HomeAssistant, source: AlertsEnergyAreaCoordinator
+) -> None:
+    """Stop and discard the source only after the final entry releases it."""
+    source.users -= 1
+    if source.users == 0:
+        areas = hass.data[DOMAIN][DATA_AREAS]
+        if areas.get(source.area) is source:
+            areas.pop(source.area)
+        await source.async_shutdown()
+
+
+class AlertsEnergyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
+    """Expose one entry's row while its area owns polling and time updates."""
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        source: AlertsEnergyAreaCoordinator,
+        entry: ConfigEntry,
+    ) -> None:
+        super().__init__(hass, logger=_LOGGER, name=DOMAIN)
+        self.source = source
+        self.area = source.area
+        self._operator = entry.data.get(CONF_OPERATOR, DEFAULT_OPERATOR)
+        self._queue = entry.data["queue"]
+        self._closed = False
+        self._unsub_source = source.async_add_listener(
+            self._handle_source_update, context=entry
+        )
+        self._handle_source_update()
+        source.async_update_polling_schedule()
+
+    @property
+    def last_successful_update(self) -> datetime | None:
+        return self.source.last_successful_update
+
+    @callback
+    def _handle_source_update(self) -> None:
+        self.data = AlertsEnergyApi.select_schedule(
+            self.source.data or [], self._operator, self._queue
+        )
+        self.last_update_success = self.source.last_update_success
+        self.last_exception = self.source.last_exception
+        self.async_update_listeners()
+
+    async def async_refresh(self) -> None:
+        await self.source.async_refresh()
+
+    async def async_request_refresh(self) -> None:
+        await self.source.async_request_refresh()
+
+    async def async_shutdown(self) -> None:
+        if not self._closed:
+            self._closed = True
+            self._unsub_source()
+            self.source.async_update_polling_schedule()
+            await async_release_area(self.hass, self.source)
+        await super().async_shutdown()
