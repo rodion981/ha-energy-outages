@@ -4,7 +4,7 @@ Ukrainian power outage schedules from [Alerts Energy](https://alerts.energy/) di
 
 [![GitHub Release](https://img.shields.io/github/v/release/rodion981/ha-energy-outages?display_name=tag&sort=semver)](https://github.com/rodion981/ha-energy-outages/releases)
 [![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/)
-[![License](https://img.shields.io/github/license/rodion981/ha-energy-outages)](./LICENSE)
+[![License](https://img.shields.io/github/license/rodion981/ha-energy-outages)](https://github.com/rodion981/ha-energy-outages/blob/main/LICENSE)
 [![Support via monobank](https://img.shields.io/badge/Support-monobank-black)](https://send.monobank.ua/jar/9jqG7oXrZG)
 
 [**English**](./README.md) | [Українською](./README.uk.md)
