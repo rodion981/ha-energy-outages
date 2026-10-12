@@ -1,6 +1,6 @@
 # Changelog
 
-## v2.4.0 (Unreleased)
+## v2.4.0 (2026-10-12)
 
 ### English
 - Add next outage, expected restoration and total outage duration with typed timestamps/minutes, explicit unknown horizons, midnight merging and DST-aware calculations.

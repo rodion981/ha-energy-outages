@@ -1,6 +1,6 @@
 # v2.4.0: forecasts and data health / прогноз і стан даних
 
-Prepared locally; not published. / Підготовлено локально, не опубліковано.
+Five additional entities and shared regional polling. / П’ять додаткових сутностей і спільне опитування області.
 
 ## Українською
 
@@ -34,6 +34,6 @@ These are planned schedules, not measured grid power. API response time is disti
 - Ruff, formatting, mypy and Python/JSON/YAML/translations/metadata validation passed on both environments.
 - Runtime tests cover typed entities, an actual HA timestamp automation, failure/recovery, unknown horizons, midnight/DST boundaries, concurrent area setup, cancellation, polling preferences and unloading shared sources.
 - Local official hassfest: 1 integration, 0 invalid integrations.
-- New v2.4 frontend/HACS installation has not been exercised on a production HA instance. Hosted CI/HACS for this version is pending publication preparation; historical v2.3 CI does not validate these changes.
+- New v2.4 frontend/HACS installation has not been exercised on a production HA instance. Hosted tests, HACS and hassfest are checked for the exact PR, merged main and release tag before publication.
 
-Publication still requires owner authorization and passing CI/HACS for the exact commit/tag.
+CI results and the downloadable integration archive are available with the GitHub release.
