@@ -12,7 +12,9 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .api import AlertsEnergyApi, AlertsEnergyApiError
 from .const import (
+    CONF_AREA,
     CONF_OPERATOR,
+    DEFAULT_AREA,
     DEFAULT_OPERATOR,
     DOMAIN,
     SCAN_INTERVAL_SECONDS,
@@ -88,7 +90,10 @@ def schedule_day_status(data: dict[str, Any] | None, day: str) -> str:
     expected = today + timedelta(days=day == "tomorrow")
     if data.get(f"{day}Date") != expected.isoformat():
         return "stale"
-    if data.get(f"{day}Status") != "ScheduleApplies":
+    source_status = data.get(f"{day}Status")
+    if source_status == "NoShutdowns":
+        return "published" if not any(hours) else "invalid"
+    if source_status != "ScheduleApplies":
         return "unpublished"
     return "published"
 
@@ -109,11 +114,14 @@ class AlertsEnergyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             update_interval=timedelta(seconds=SCAN_INTERVAL_SECONDS),
         )
         self._api = api
+        self.area = entry.data.get(CONF_AREA, DEFAULT_AREA)
         self._operator = entry.data.get(CONF_OPERATOR, DEFAULT_OPERATOR)
         self._queue = entry.data["queue"]
 
     async def _async_update_data(self) -> dict[str, Any]:
         try:
-            return await self._api.async_get_schedule(self._operator, self._queue)
+            return await self._api.async_get_schedule(
+                self._operator, self._queue, self.area
+            )
         except AlertsEnergyApiError as err:
             raise UpdateFailed(str(err)) from err

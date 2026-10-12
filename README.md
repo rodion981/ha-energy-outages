@@ -23,11 +23,11 @@ Power outage schedules from Alerts Energy directly in Home Assistant.
 > [!NOTE]
 > The HACS button requires HACS to be installed. The Add Integration button works after the custom integration has been downloaded and Home Assistant restarted.
 
-A custom Home Assistant integration that retrieves power outage schedules from [alerts.energy/kyiv](https://alerts.energy/kyiv) for DTEK Kyiv Electric Networks outage groups.
+A custom Home Assistant integration that retrieves power outage schedules from [Alerts Energy](https://alerts.energy/) for the regions, operators and exact queues available in the source.
 
 ## Features
 
-- outage group configuration through the Home Assistant UI;
+- region, city/village, operator and exact queue selection through the Home Assistant UI;
 - schedules for today and tomorrow;
 - all outage periods with 30-minute precision;
 - an “Outage now” binary sensor;
@@ -51,7 +51,7 @@ The integration domain is `alerts_energy_outages`.
 4. Find and install **Alerts Energy Outages**.
 5. Restart Home Assistant.
 6. Open **Settings → Devices & services → Add integration**.
-7. Find **Alerts Energy Outages**, enter a name, and select your outage group.
+7. Find **Alerts Energy Outages** and select your region, settlement, operator and queue. You can change the name at the final step.
 
 ## Entities
 
@@ -69,6 +69,7 @@ Home Assistant generates entity IDs from the config entry name and entity name. 
 
 | Attribute | Description |
 |---|---|
+| `area` | Selected region slug, for example `kyivska-oblast` |
 | `queue` | Selected outage group, for example `2.2` |
 | `operator` | Operator identifier used by Alerts Energy |
 | `updated` | Time of the latest schedule change, if provided by the API |
@@ -101,10 +102,10 @@ Starting with `v2.1.0`, the integration uses the dedicated `custom_components/al
 The integration polls the public Alerts Energy JSON endpoint:
 
 ```text
-https://alerts.energy/api/v1/source-registry/areas/kyiv/shutdowns
+https://alerts.energy/api/v1/source-registry/areas/{area}/shutdowns
 ```
 
-For the selected outage group, it uses the `kyiv_oblenergo` operator entry. Hourly codes are converted into 30-minute boundaries, and adjacent segments are merged into continuous outage periods.
+It uses the selected area, exact operator and queue. Existing Kyiv entries retain `area=kyiv` and their current operator. Hourly codes are converted into 30-minute boundaries, and adjacent segments are merged into continuous outage periods.
 
 If the API is temporarily unavailable or returns an invalid structure, the coordinator marks the update as failed and Home Assistant keeps the most recently retrieved successful data.
 
@@ -126,9 +127,29 @@ It is only needed for manual setup without the custom integration. For new insta
 
 ## Known limitations
 
-- currently supports Kyiv and the DTEK Kyiv Electric Networks operator;
+- only operators and exact queues provided by Alerts Energy are supported; a region in the directory does not guarantee a published schedule;
 - missing, malformed, undated, stale, or unpublished daily schedules are unavailable; a published array of 24 zeros means no scheduled outages;
 - the data source is a third-party service and its API format may change.
+
+## Location selection in v2.3.0
+
+1. **Region**: choose an oblast or a city with special status. Kyiv city and Kyiv oblast use different schedules.
+2. **Settlement**: for an oblast, select a district, community, then your city or village. The directory loads one level at a time, with Back and Skip options. Kyiv city does not require this step.
+3. **Operator**: select the operator whose network serves your address. A region can have several operators.
+4. **Queue**: select an exact queue verified on your operator's official site, choose a display name and finish setup.
+
+Alerts Energy supplies regional schedules by operator and queue. Selecting a city saves its name and directory identifier; it **does not discover a queue from an address** or produce a separate city-specific schedule. The same region/operator/queue cannot be added twice for different cities. Different queues or operators can be added as separate entries.
+
+If operators or queues are absent, the form offers retry or return to the previous selection. It never substitutes another operator or queue.
+
+### Upgrade and reconfiguration
+
+- Existing v2.1.x/v2.2.x entries automatically receive the historical Kyiv area. Keep the entries: entity IDs, entity unique IDs, devices and automations are preserved.
+- **Settings → Devices & services → Alerts Energy Outages → Reconfigure** starts the complete location selection. Changes apply only after the final step; cancellation and failures leave the current entry unchanged.
+- New sensor attribute `area` contains the region slug. The device links to the selected region page. Diagnostics includes the area but excludes settlement details and the entry title.
+- A `NoShutdowns` source status is published only with the expected date and 24 zero codes. Unknown statuses, emergency codes and unpublished data remain unavailable.
+- The domain and ConfigEntry major version are unchanged; location fields use minor version 2. Downgrading to v2.2.x is only suitable for Kyiv entries: earlier code does not support other regions. Regional entries require v2.3.0 or later.
+- The optional legacy YAML package remains an exact Kyiv queue 2.2 example. Regional selection is available in the custom integration.
 
 ## Changes in v2.2.0
 

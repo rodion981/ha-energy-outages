@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from urllib.parse import quote
+
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
@@ -12,7 +14,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from .const import CONF_ENTITY_UNIQUE_ID, DOMAIN, SCHEDULE_TIME_ZONE
+from .const import CONF_ENTITY_UNIQUE_ID, DOMAIN, SCHEDULE_TIME_ZONE, SITE_URL
 from .coordinator import AlertsEnergyCoordinator, outage_periods, schedule_day_status
 
 
@@ -51,7 +53,7 @@ class AlertsEnergyOutageNow(
             "identifiers": {(DOMAIN, identity)},
             "name": entry.title,
             "manufacturer": "Alerts Energy",
-            "configuration_url": "https://alerts.energy/kyiv",
+            "configuration_url": f"{SITE_URL}/{quote(coordinator.area, safe='')}",
         }
 
     @property

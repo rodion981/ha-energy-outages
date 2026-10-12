@@ -4,8 +4,8 @@
 - `custom_components/alerts_energy_outages/`: custom integration, domain `alerts_energy_outages`.
 - `brand/icon.png`, `brand/icon@2x.png`: локальна іконка для HA 2026.3+ та HACS; старі HA її не використовують.
 - `manifest.json`, `hacs.json`: версія/HA metadata; `const.py`: operator, endpoint, polling, source timezone.
-- `config_flow.py`: динамічні точні черги, duplicate protection, reconfigure зі збереженням entity identity.
-- `api.py`: HA-managed aiohttp session, публічний GET, response/queue validation.
+- `config_flow.py`: область → район/громада/населений пункт → оператор → черга; retry/back, duplicate protection, atomic reconfigure зі збереженням entity identity.
+- `api.py`: HA-managed aiohttp session; публічні GET /atus, /atus/{katottg}, /source-registry/areas/{area}/{suppliers,shutdowns}; Territory validation. Міський довідник не визначає чергу або оператора за адресою.
 - `__init__.py`: first refresh, platform setup/unload, coordinator у `hass.data`, UTC clock listener із cleanup.
 - `coordinator.py`: polling 60 с, UpdateFailed, day validity, half-hour periods, state formatting.
 - `sensor.py`, `binary_sensor.py`: незалежна availability днів і поточне планове відключення; entity properties без I/O.
@@ -24,12 +24,13 @@
 
 ## Безпечні зміни та backward compatibility
 - Спершу перевір реалізацію й відтвори проблему. Змінюй найвужчий шар; уникай unrelated refactoring.
-- Зберігай domain, schema VERSION=1, entity keys та існуючі атрибути. Зміни їх контракту потребують compatibility plan.
-- Entry unique ID = operator_queue. Entity/device identity = збережений `entity_unique_id`, інакше entry.unique_id/entry_id. Reconfigure змінює queue/entry unique ID, але залишає registry identity; не створюй колізії при повторному використанні старої черги.
+- Зберігай domain, schema VERSION=1 (MINOR_VERSION=2), entity keys та існуючі атрибути. Зміни їх контракту потребують compatibility plan.
+- Entry unique ID для Києва = operator_queue; для інших областей = area_operator_queue. Не додавай locality до ID: графік регіональний. Entity/device identity = збережений `entity_unique_id`, інакше entry.unique_id/entry_id. Reconfigure змінює queue/entry unique ID, але залишає registry identity; не створюй колізії при повторному використанні старої черги.
 - Не підміняй відсутню чергу схожим номером. Отримуй точні варіанти з API й вимагай явного вибору користувача.
+- `async_migrate_entry`: idempotent expand-only area=kyiv для старих записів; зберігай дані й registry identity. Старі версії підтримують лише київські записи.
 - Дні незалежні. Невідомі/невалідні/недатовані/застарілі графіки не означають «без відключень» чи off.
 - Source timezone: Europe/Kyiv. Перевіряй midnight, DST, half-hour boundaries та unavailable/recovery. Clock updates мають працювати без зміни payload.
-- Коди: 0=світло є, 1=немає всю годину, 2=перші 30 хв, 3=другі 30 хв; лише int, не bool/string. Інтервали [start,end), межі 0..48, кінець доби 24:00.
+- Коди: 0=світло є, 1=немає всю годину, 2=перші 30 хв, 3=другі 30 хв; лише int, не bool/string. NoShutdowns приймай лише з актуальною датою й 24 нулями; emergency/невідомі коди не перетворюй на off. Інтервали [start,end), межі 0..48, кінець доби 24:00.
 - State має ліміт 255 символів; усі періоди зберігай в атрибутах. Локалізований текст не є machine contract.
 - HA-managed session не закривай самостійно; blocking I/O не додавай. Зберігай first refresh до platform setup, успішний unload і timer cleanup.
 - Legacy YAML: зберігай entity IDs/friendly names та залежні автоматизації. Не використовуй видалені `platform: template` чи `from_json(default)`, несумісний із HA 2024.6.

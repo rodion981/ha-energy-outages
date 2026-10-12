@@ -21,3 +21,13 @@ Optional pre-commit: install `pre-commit`, then run `pre-commit install` and `pr
 CI runs both HA baselines, lint, formatting, type checks, metadata validation, hassfest and HACS validation. Before a release, also test a clean installation, setup/unload/reload, network failure/recovery and identity-preserving reconfiguration. Live public API checks are read-only and must remain separate from mocked regression tests. Do not modify a working Home Assistant instance during development.
 
 У Linux/WSL запускайте HA runtime-тести в окремих середовищах для мінімальної й сучасної версій. Перед змінами читайте `AGENTS.md`, зберігайте domain, entity/device identity та публічні атрибути. Після змін запускайте релевантні перевірки; статичні, runtime, CI та live API результати повідомляйте окремо. Не підміняйте черги автоматично, не перетворюйте невідомий графік на відсутність відключень і не публікуйте реліз без дозволу власника.
+
+For regional changes, cover the region/district/community/settlement flow, exact operators/queues, unavailable-directory retry/back, area-qualified duplicates and atomic reconfiguration. Keep the old Kyiv entity/device identity and test minor-version migration without a directory request. Source directories do not map addresses to queues.
+
+Optional local hassfest with Docker (read-only checkout mount):
+
+```sh
+docker run --rm -v "$PWD:/github/workspace:ro" ghcr.io/home-assistant/hassfest
+```
+
+Prepared release notes: [docs/RELEASE_NOTES_v2.3.0.md](docs/RELEASE_NOTES_v2.3.0.md). Hosted CI/HACS must pass for the exact commit/tag before publication.
