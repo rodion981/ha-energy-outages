@@ -1,6 +1,6 @@
 # v2.3.0: regional selection / вибір місця
 
-Release candidate preparation, not yet published. / Підготовлена версія, ще не опублікована.
+Regional schedule selection. / Вибір місця для регіональних графіків.
 
 ## Українською
 
@@ -35,4 +35,4 @@ Schedules remain regional by area/operator/queue. A city does not discover an ad
 - Tests cover full city navigation, skip/back/retry, multiple operators, cross-area identities, duplicates, atomic/cancelled reconfigure, migration/reload, unavailable data and prior time-boundary regressions.
 - Read-only live API check on 2026-10-12: 27 top-level directory areas; Bucha city path verified; Kyiv city, Kyiv oblast, Dnipropetrovsk and Lviv region endpoints verified. Kyiv schedules were published; Dnipropetrovsk operators returned NoShutdowns; Lviv operators had no queues.
 - Local official hassfest container: 1 integration, 0 invalid integrations.
-- Hosted CI/HACS checks for this version remain a publication gate after pushing the prepared branch. Production HA and visual frontend installation were not exercised.
+- GitHub CI/HACS must pass for the exact PR, merged main and release tag before publication. Production HA and visual frontend installation were not exercised.

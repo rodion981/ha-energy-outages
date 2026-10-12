@@ -1,6 +1,6 @@
 # Changelog
 
-## v2.3.0 (Unreleased)
+## v2.3.0 (2026-10-12)
 
 ### English
 - Dynamic oblast/city directory, district/community/settlement navigation and exact operator/queue selection.
