@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.4.0 (2026-10-12)
+
+### English
+- Add next outage, expected restoration and total outage duration with typed timestamps/minutes, explicit unknown horizons, midnight merging and DST-aware calculations.
+- Add localized data status and last successful API response time, visible during failures.
+- Share one poller/clock per area while preserving queue identities, disable-polling preferences and cleanup on concurrent setup, cancellation and final unload.
+
+### Українською
+- Наступне відключення, очікуване відновлення й повна тривалість: timestamp/хвилини, невідомий кінець горизонту, злиття через північ та врахування DST.
+- Локалізований статус даних і останній успішний час відповіді API, доступні при збої.
+- Один poller/clock на область зі збереженням черг, pref_disable_polling і cleanup при паралельному setup, скасуванні та останньому unload.
+
 ## v2.3.0 (2026-10-12)
 
 ### English
