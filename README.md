@@ -1,212 +1,127 @@
 # Alerts Energy Outages
 
-Power outage schedules from Alerts Energy directly in Home Assistant.
+Ukrainian power outage schedules from [Alerts Energy](https://alerts.energy/) directly in Home Assistant. Select your region, settlement, operator and exact queue to see published schedules, the next outage and expected restoration.
 
 [![GitHub Release](https://img.shields.io/github/v/release/rodion981/ha-energy-outages?display_name=tag&sort=semver)](https://github.com/rodion981/ha-energy-outages/releases)
 [![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/)
 [![License](https://img.shields.io/github/license/rodion981/ha-energy-outages)](./LICENSE)
 [![Support via monobank](https://img.shields.io/badge/Support-monobank-black)](https://send.monobank.ua/jar/9jqG7oXrZG)
 
-
 [**English**](./README.md) | [Українською](./README.uk.md)
-
-## Quick install
-
-1. Open this repository in HACS using the button below and download the integration.
-2. Restart Home Assistant.
-3. Use **Add Integration** to start the setup flow.
-
-[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rodion981&repository=ha-energy-outages&category=integration)
-
-[![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=alerts_energy_outages)
-
-> [!NOTE]
-> The HACS button requires HACS to be installed. The Add Integration button works after the custom integration has been downloaded and Home Assistant restarted.
-
-A custom Home Assistant integration that retrieves power outage schedules from [Alerts Energy](https://alerts.energy/) for the regions, operators and exact queues available in the source.
 
 ## Features
 
-- region, city/village, operator and exact queue selection through the Home Assistant UI;
-- schedules for today and tomorrow;
-- all outage periods with 30-minute precision;
-- an “Outage now” binary sensor;
-- raw hourly codes and calculated outage periods in entity attributes;
-- automatic data updates every 60 seconds.
+- Region, city/village, operator and exact queue selection through the Home Assistant UI.
+- Today and tomorrow schedules with every outage period at 30-minute precision.
+- An **Outage now** binary sensor for the current scheduled outage.
+- **Next outage**, **Expected restoration** and **Outage duration** for dashboards and automations.
+- **Data status** and **Last successful API update**, visible during source failures.
+- One shared API poll every 60 seconds per active region, including when several queues are configured.
+- English and Ukrainian entity names and status labels.
 
-The integration domain is `alerts_energy_outages`.
+> [!NOTE]
+> This integration shows **planned schedules**, not measured grid power. Selecting a settlement does not discover your queue from an address: check the exact operator and queue on your electricity operator's official website.
 
-## Installation via HACS
+## In Home Assistant
 
-1. Open **HACS → Integrations**.
-2. Open the menu in the top-right corner and select **Custom repositories**.
-3. Add the repository:
+<img src="https://raw.githubusercontent.com/rodion981/ha-energy-outages/main/docs/images/integration-entities.png" alt="Alerts Energy Outages sensors and diagnostics in the Ukrainian Home Assistant interface" width="400">
 
-   ```text
-   https://github.com/rodion981/ha-energy-outages
-   ```
+Example from a working installation with the Ukrainian interface. Entity names follow Home Assistant's language; schedules and relative times in the screenshot are an example.
 
-   Type: **Integration**.
+## Requirements
 
-4. Find and install **Alerts Energy Outages**.
-5. Restart Home Assistant.
-6. Open **Settings → Devices & services → Add integration**.
-7. Find **Alerts Energy Outages** and select your region, settlement, operator and queue. You can change the name at the final step.
+- Home Assistant **2024.6 or newer**.
+- Internet access from Home Assistant to `https://alerts.energy`.
+- HACS for installation and updates. No Alerts Energy account or API key is required.
+
+The integration includes its own icon for Home Assistant 2026.3 and newer. Earlier supported versions may show a generic integration icon.
+
+## Installation
+
+1. Open the repository in HACS using **Open in HACS**, then download **Alerts Energy Outages**.
+2. Restart Home Assistant.
+3. Use **Add Integration**, or open **Settings → Devices & services → Add integration** and search for **Alerts Energy Outages**.
+4. Complete the region, settlement, operator and queue selection.
+
+[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rodion981&repository=ha-energy-outages&category=integration)
+[![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=alerts_energy_outages)
+
+The first button requires HACS. The second works after downloading the integration and restarting Home Assistant.
+
+If the repository is not listed, add `https://github.com/rodion981/ha-energy-outages` under **HACS → Custom repositories**, with type **Integration**.
+
+## Region and queue selection
+
+1. **Region:** choose an oblast or a city with special status. Kyiv city and Kyiv oblast have separate schedules.
+2. **Settlement:** for an oblast, navigate through district and community to your city or village. You can go back or skip settlement selection; Kyiv city does not need this step.
+3. **Operator:** select the electricity network serving your address. A region may contain several operators.
+4. **Queue:** select your exact queue, enter a display name and finish setup.
+
+Schedules are regional by **region + operator + queue**. A settlement is saved for convenience and does not produce a separate city schedule. Add separate entries for different queues or operators; the same regional schedule cannot be added twice through different cities.
+
+If operators or queues are missing, retry or return to the previous selection. A directory listing does not guarantee a published schedule, and the integration never substitutes another queue.
+
+To change a selection, open **Settings → Devices & services → Alerts Energy Outages → Reconfigure**. Changes apply after the final step; cancellation leaves the current setup unchanged. Existing entity IDs and the device are preserved.
 
 ## Entities
 
-For each configured outage group, the integration creates eight entities:
+Each configured queue creates **eight entities**:
 
 | Entity | Purpose |
 |---|---|
-| Today schedule | All outage periods for the current day |
-| Tomorrow schedule | All published outage periods for the next day |
-| Outage now | Turns on when the current time falls within an outage period |
-| Next outage | Timestamp of the next future outage |
-| Expected restoration | Published end of the current or next outage |
-| Outage duration | Full planned duration in minutes when both boundaries are known |
-| Data status | Publication, validity and availability of source data |
-| Last successful API update | Last successful response time, retained on failure |
+| Today schedule | All published outage periods for today |
+| Tomorrow schedule | All published outage periods for tomorrow |
+| Outage now | On while the current time is inside a scheduled outage |
+| Next outage | Date and time of the next future outage start; excludes an ongoing outage |
+| Expected restoration | Published end of the current outage, or the nearest upcoming one when none is ongoing |
+| Outage duration | Full planned duration of that current/upcoming outage in minutes, when both boundaries are known |
+| Data status | Today's publication, validity and source availability; attributes also describe tomorrow |
+| Last successful API update | Time of the last successful response, retained during failures |
 
-Home Assistant generates entity IDs from the config entry name and entity name. You can see the current IDs under **Settings → Devices & services → Alerts Energy Outages → Entities**.
+Find the actual entity IDs under **Settings → Devices & services → Alerts Energy Outages → Entities**. The last two entities are in the device's **Diagnostics** section.
 
-### Schedule sensor attributes
+Add the entities to an **Entities** card. For notifications, use **Next outage** in an automation time trigger, or the on/off transitions of **Outage now**. Duration is a full period, not a countdown.
 
-| Attribute | Description |
-|---|---|
-| `area` | Selected region slug, for example `kyivska-oblast` |
-| `queue` | Selected outage group, for example `2.2` |
-| `operator` | Operator identifier used by Alerts Energy |
-| `updated` | Time of the latest schedule change, if provided by the API |
-| `hours` | Array containing 24 hourly codes |
-| `periods` | Calculated periods with `start` and `end` fields |
+## Reading the data
 
-Code values:
+- **`unavailable`:** the relevant schedule is missing, invalid, undated, stale or unpublished, or its API update failed. Today and tomorrow are checked independently.
+- **`unknown`:** a forecast entity has no matching event in published coverage, or its required boundary is unknown. This does not mean a zero-minute outage.
+- **Midnight:** an outage ending at `24:00` in today's display may continue tomorrow. Restoration and full duration stay unknown until published coverage confirms an end. Continuous outages merge across midnight when both days are published.
+- **Unknown start:** an outage already ongoing at the beginning of today's coverage may have started yesterday. Its full duration is unknown, but a published restoration remains available.
+- **No scheduled outages:** a valid, dated schedule with 24 zero codes means no planned outages for that day. Emergency and unknown source statuses are not interpreted as power being available.
 
-- `0` — power is available;
-- `1` — no power for the entire hour;
-- `2` — no power for the first 30 minutes;
-- `3` — no power for the second 30 minutes.
+Calculations use **Europe/Kyiv**, including daylight saving transitions. Timestamp entities are displayed in Home Assistant's timezone. **Next outage** can describe a later period while restoration and duration describe the ongoing one.
 
-## Migrating from v2.0.x
+Data status has stable machine values: `published`, `unpublished`, `stale`, `invalid`, `not_found`, `connection_error` and `emergency`. Frontend labels are translated. API response time is separate from the source's schedule publication time.
 
-Versions `v2.0.1–v2.0.2` incorrectly used the legacy domain `yasno_outages`. Because of this, Home Assistant could mix config entries and show a migration error.
+### Attributes for automations
 
-To migrate to `v2.1.0` or newer:
+Schedule sensors expose `area`, `operator`, `queue`, `date`, `updated`, `hours`, `periods`, `source_status` and `schedule_status`. Each period has `start` and `end`; long text states may be shortened, but all periods remain in attributes.
 
-1. In **Settings → Devices & services**, remove the **Alerts Energy** config entry.
-2. Remove the old **Alerts Energy Outages** version from HACS.
-3. Restart Home Assistant.
-4. Install the current version of **Alerts Energy Outages**.
-5. Restart Home Assistant again and add the integration from scratch.
+Forecast sensors expose `outage_context` (`current`, `next`, `none`), `outage_start`, `outage_end`, `coverage_end` and `forecast_status`. Data status attributes include `today_schedule_status` and `tomorrow_schedule_status`.
 
-Starting with `v2.1.0`, the integration uses the dedicated `custom_components/alerts_energy_outages` directory.
+For automations, use typed timestamps, the binary sensor and machine attributes instead of matching translated schedule text.
 
-## How it works
+## Source and updates
 
-The integration polls the public Alerts Energy JSON endpoint:
+The integration reads the public Alerts Energy endpoint:
 
 ```text
 https://alerts.energy/api/v1/source-registry/areas/{area}/shutdowns
 ```
 
-It uses the selected area, exact operator and queue. Existing Kyiv entries retain `area=kyiv` and their current operator. Hourly codes are converted into 30-minute boundaries, and adjacent segments are merged into continuous outage periods.
+It selects the exact operator/queue record and interprets each hourly code as two half-hour slots: `0` = no planned outage, `1` = outage for the whole hour, `2` = first half, `3` = second half. Adjacent slots form continuous periods.
 
-If the API is temporarily unavailable or returns an invalid structure, the coordinator marks the update as failed and Home Assistant keeps the most recently retrieved successful data.
+Entries in the same region share one poller and clock listener. Removing one entry keeps the others working; removing the last releases the region's resources. Source coverage and publication depend on Alerts Energy, and its API may change.
 
-## Legacy YAML package
+Update through HACS and restart Home Assistant. Configured entries and their entity identities are retained.
 
-The repository still includes the older YAML-based version:
+## Support and development
 
-```text
-includes/packages/energyua_22.yaml
-```
+Report bugs and suggestions through [GitHub Issues](https://github.com/rodion981/ha-energy-outages/issues). Include your integration/HA versions, the region/operator/queue and diagnostics; never include passwords or tokens.
 
-It is only needed for manual setup without the custom integration. For new installations, the HACS integration is recommended. The YAML package requires Home Assistant’s timezone to be `Europe/Kyiv`; its queue remains exactly `2.2` and is never mapped to another queue. Do not configure the same outage group through both HACS and the legacy YAML package at the same time, because this will create duplicate entities.
+[Development and checks](./CONTRIBUTING.md) · [Changelog](./CHANGELOG.md) · [Releases](https://github.com/rodion981/ha-energy-outages/releases)
 
-## Requirements
+Support development through [monobank](https://send.monobank.ua/jar/9jqG7oXrZG) or [Patreon](https://www.patreon.com/c/Rodion_Kurylenko).
 
-- Home Assistant 2024.6 or newer;
-- Home Assistant must be able to access `https://alerts.energy`;
-- HACS is only required for automatic installation and updates.
-
-## Known limitations
-
-- only operators and exact queues provided by Alerts Energy are supported; a region in the directory does not guarantee a published schedule;
-- missing, malformed, undated, stale, or unpublished daily schedules are unavailable; a published array of 24 zeros means no scheduled outages;
-- the data source is a third-party service and its API format may change.
-
-## Forecast and data health in v2.4.0
-
-After upgrading and restarting HA, the original three entities keep their identities. Five additive entities appear under **Settings → Devices & services → Alerts Energy Outages → Entities**.
-
-| Entity / key | Meaning |
-|---|---|
-| Next outage / `next_outage` | Timestamp of the next future outage start, excluding an ongoing outage |
-| Expected restoration / `expected_restoration` | Published end of the current outage, or the nearest upcoming one when none is ongoing |
-| Outage duration / `outage_duration` | Total scheduled minutes for that same current/upcoming outage, not a countdown |
-| Data status / `data_status` | Published, unpublished, stale date, invalid data, missing queue, retrieval error or emergency outages |
-| Last successful API update / `last_successful_update` | Last successful response time, retained on failure; distinct from source publication timestamp `updated` |
-
-Timestamp entities are displayed in HA's timezone. Calculations use Europe/Kyiv and account for DST transitions. Forecast duration has no statistics state class.
-
-### Interpretation
-
-- When published schedules contain no future outage, time/duration states are `unknown`, not zero. `coverage_end` shows the published horizon.
-- An outage reaching midnight has an unknown restoration/duration if the following day is unpublished. Midnight never implies restoration. `forecast_status=end_not_published` explains this.
-- An ongoing outage at the beginning of today's coverage has an unknown full start/duration, since yesterday is absent. Its published restoration remains available; duration uses `forecast_status=start_not_published`.
-- Continuous outages merge across midnight only when both days are published. Missing/stale schedules and API failures make schedule/forecast entities unavailable.
-- `outage_context=current/next/none` and `outage_start/outage_end` identify the window behind restoration/duration. Next outage may refer to the following event while one is ongoing.
-- Information entities remain visible during failures. Data status covers today; attributes expose today/tomorrow separately. Machine states are stable; frontend labels are English/Ukrainian.
-
-Add these entities to an Entities card. Use the next outage timestamp in a time trigger for notifications, or `outage_now` on/off transitions for the start/end of a scheduled outage. These are planned schedules, not measurements of grid power.
-
-Active entries in the same area share one 60-second API poller and clock listener. Operators/queues stay independent; removing one entry keeps the rest working, and removing the last releases the area. Setup/reconfiguration forms still fetch fresh lists for validation.
-
-## Location selection in v2.3.0
-
-1. **Region**: choose an oblast or a city with special status. Kyiv city and Kyiv oblast use different schedules.
-2. **Settlement**: for an oblast, select a district, community, then your city or village. The directory loads one level at a time, with Back and Skip options. Kyiv city does not require this step.
-3. **Operator**: select the operator whose network serves your address. A region can have several operators.
-4. **Queue**: select an exact queue verified on your operator's official site, choose a display name and finish setup.
-
-Alerts Energy supplies regional schedules by operator and queue. Selecting a city saves its name and directory identifier; it **does not discover a queue from an address** or produce a separate city-specific schedule. The same region/operator/queue cannot be added twice for different cities. Different queues or operators can be added as separate entries.
-
-If operators or queues are absent, the form offers retry or return to the previous selection. It never substitutes another operator or queue.
-
-### Upgrade and reconfiguration
-
-- Existing v2.1.x/v2.2.x entries automatically receive the historical Kyiv area. Keep the entries: entity IDs, entity unique IDs, devices and automations are preserved.
-- **Settings → Devices & services → Alerts Energy Outages → Reconfigure** starts the complete location selection. Changes apply only after the final step; cancellation and failures leave the current entry unchanged.
-- New sensor attribute `area` contains the region slug. The device links to the selected region page. Diagnostics includes the area but excludes settlement details and the entry title.
-- A `NoShutdowns` source status is published only with the expected date and 24 zero codes. Unknown statuses, emergency codes and unpublished data remain unavailable.
-- The domain and ConfigEntry major version are unchanged; location fields use minor version 2. Downgrading to v2.2.x is only suitable for Kyiv entries: earlier code does not support other regions. Regional entries require v2.3.0 or later.
-- The optional legacy YAML package remains an exact Kyiv queue 2.2 example. Regional selection is available in the custom integration.
-
-## Changes in v2.2.0
-
-- The setup form discovers exact queues from the current API instead of assuming 12 fixed identifiers. It never substitutes one queue for another.
-- Use **Settings → Devices & services → Alerts Energy Outages → Reconfigure** to select a changed queue. Entity IDs, unique IDs and the existing device are retained. Existing entries are upgraded in place; do not remove them to update from v2.1.x.
-- If an existing queue disappears, its entities remain registered but unavailable until the queue returns or you reconfigure it.
-- Today and tomorrow have independent availability. The integration checks integer codes, source status and the schedule date in `Europe/Kyiv`. API errors make the entities unavailable and retain the last successful data in memory.
-- Half-hour and midnight changes update entity states without an additional API request. This is a schedule indicator, not a measurement of actual grid power.
-- Long text states are shortened to stay within Home Assistant’s 255-character limit; all periods remain in attributes. “No outages” is shown in English and “Без відключень” in Ukrainian. Automations should use `schedule_status` and `periods` instead of matching localized text.
-- New attributes: `date`, `source_status`, `schedule_status` (`published`, `unpublished`, `invalid`, `stale`, `not_found`). The existing `queue`, `operator`, `updated`, `hours` and `periods` attributes remain.
-- Diagnostics expose update health and public schedule metadata, without exporting the full response or entry title.
-- The legacy package uses modern `template:` syntax, retains its entity IDs and friendly names, and includes every outage period in its binary sensor and summary attributes. Existing first/second-slot entities remain for compatibility. Missing data no longer means power is available; a valid zero-outage tomorrow schedule is considered published.
-
-The default queue `2.2` used by older versions may be absent from the current source. Verify your actual queue on Alerts Energy before reconfiguring; do not infer a replacement from similar numbering.
-
-Development and verification instructions: [CONTRIBUTING.md](./CONTRIBUTING.md). Release history: [CHANGELOG.md](./CHANGELOG.md).
-
-## Support
-
-If this project is useful to you, you can support its development via [monobank](https://send.monobank.ua/jar/9jqG7oXrZG). You can also support the project on [Patreon](https://www.patreon.com/c/Rodion_Kurylenko).
-
-Report bugs and suggestions through [GitHub Issues](https://github.com/rodion981/ha-energy-outages/issues).
-
-Made with ❤️ in Ukraine.
-
-## License
-
-[MIT](LICENSE)
+Made with ❤️ in Ukraine. Licensed under [MIT](./LICENSE).

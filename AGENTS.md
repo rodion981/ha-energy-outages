@@ -38,4 +38,4 @@
 - Legacy YAML: зберігай entity IDs/friendly names та залежні автоматизації. Не використовуй видалені `platform: template` чи `from_json(default)`, несумісний із HA 2024.6.
 - Не вмикай custom integration і YAML-пакет для тієї самої черги одночасно. Не змінюй робочий HA під час тестів.
 - Після змін запускай релевантні gates. Окремо повідомляй static, runtime, hosted CI, live API та frontend результати; пропущені перевірки не називай успішними.
-- Push/tag/release лише з дозволу власника й після релевантних gates; двомовні release notes. Старий перехід із yasno_outages залишається ручним, як описано README.
+- Push/tag/release лише з дозволу власника й після релевантних gates; двомовні release notes. Старий перехід із yasno_outages залишається ручним і не належить до поточного встановлення.
