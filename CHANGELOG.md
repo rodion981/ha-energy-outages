@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.4.1 (2026-10-12)
+
+### English
+- Publish the current English/Ukrainian README and working-UI screenshot in a versioned release, so HACS can load them from the release tag.
+- Remove historical migration/legacy sections from the README and document regional setup, all eight entities and unknown forecast boundaries.
+- Use an absolute license badge link for HACS rendering. Runtime behavior, configuration and entity identities remain unchanged from v2.4.0.
+
+### Українською
+- Актуальні README українською й англійською та скріншот робочого інтерфейсу включені у версійний реліз, щоб HACS отримував їх із тегу.
+- З README прибрано історичні міграції/legacy-розділи; описано регіональний вибір, вісім сутностей і невідомі межі прогнозу.
+- Посилання бейджа ліцензії зроблено абсолютним для відображення в HACS. Поведінка інтеграції, налаштування та ідентифікатори сутностей ті самі, що у v2.4.0.
+
 ## v2.4.0 (2026-10-12)
 
 ### English
