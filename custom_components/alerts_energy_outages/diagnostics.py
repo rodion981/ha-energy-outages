@@ -18,6 +18,7 @@ async def async_get_config_entry_diagnostics(
     coordinator: AlertsEnergyCoordinator = hass.data[DOMAIN][entry.entry_id]
     data = coordinator.data or {}
     return {
+        "area": coordinator.area,
         "last_update_success": coordinator.last_update_success,
         "operator": entry.data["operator"],
         "queue": entry.data["queue"],

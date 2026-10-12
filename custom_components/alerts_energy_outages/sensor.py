@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import quote
 
 from homeassistant.components.sensor import SensorEntity, SensorEntityDescription
 from homeassistant.config_entries import ConfigEntry
@@ -12,7 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_ENTITY_UNIQUE_ID, DOMAIN
+from .const import CONF_ENTITY_UNIQUE_ID, DOMAIN, SITE_URL
 from .coordinator import (
     AlertsEnergyCoordinator,
     format_periods,
@@ -86,7 +87,7 @@ class AlertsEnergySensor(
             "identifiers": {(DOMAIN, identity)},
             "name": entry.title,
             "manufacturer": "Alerts Energy",
-            "configuration_url": "https://alerts.energy/kyiv",
+            "configuration_url": f"{SITE_URL}/{quote(coordinator.area, safe='')}",
         }
 
     @property
@@ -118,6 +119,7 @@ class AlertsEnergySensor(
             outage_periods(self.coordinator.data[day]) if status == "published" else []
         )
         return {
+            "area": self.coordinator.area,
             "queue": self.coordinator.data["queue"],
             "operator": self.coordinator.data["initiator"],
             "updated": self.coordinator.data.get("updated"),

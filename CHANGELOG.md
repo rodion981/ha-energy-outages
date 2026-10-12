@@ -1,5 +1,23 @@
 # Changelog
 
+## v2.3.0 (Unreleased)
+
+### English
+- Dynamic oblast/city directory, district/community/settlement navigation and exact operator/queue selection.
+- Poll the chosen region; preserve historical Kyiv settings and all existing entity/device identities through migration and reconfiguration.
+- Area-qualified duplicate protection; selecting another city does not duplicate the same regional schedule.
+- Retry/back for missing source data, regional device links and allowlisted area diagnostics.
+- Support dated, validated zero-outage NoShutdowns schedules used by additional operators.
+- Extend regression coverage and document regional setup and downgrade limits.
+
+### Українською
+- Динамічний вибір області/міста, навігація район → громада → населений пункт, точні оператори та черги.
+- Запити до обраної області; збереження київських налаштувань, entity/device identity під час міграції й переналаштування.
+- Захист від дублювання за областю/оператором/чергою; інше місто не дублює той самий регіональний графік.
+- Retry/back за відсутніх даних, посилання device на область, diagnostics без даних населеного пункту.
+- Підтримка датованих NoShutdowns лише для валідного масиву з 24 нулів.
+- Нові regression-тести, інструкція налаштування й обмеження повернення до старої версії.
+
 ## v2.2.0
 
 ### English

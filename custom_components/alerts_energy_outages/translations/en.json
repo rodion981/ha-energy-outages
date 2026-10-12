@@ -2,31 +2,57 @@
   "config": {
     "step": {
       "user": {
-        "title": "Alerts Energy",
-        "description": "Select your exact Kyiv outage queue from the current Alerts Energy list.",
+        "title": "Select region",
+        "description": "Choose your oblast or a city with special status from Alerts Energy.",
         "data": {
-          "name": "Name",
-          "queue": "Queue"
+          "area": "Region / city with special status"
         }
       },
       "reconfigure": {
-        "title": "Reconfigure outage queue",
-        "description": "Select the exact queue shown by Alerts Energy. Existing entity IDs are preserved.",
+        "title": "Change location and queue",
+        "description": "Choose a region, settlement, operator and exact queue. Existing entity IDs are preserved after the final step.",
+        "data": {
+          "area": "Region / city with special status"
+        }
+      },
+      "locality": {
+        "title": "Select settlement",
+        "description": "Current territory: {territory}. Select a district, then a community and your city or village. You can skip this step. Schedules are regional: confirm your operator and queue yourself.",
+        "data": {
+          "locality": "District / community / settlement"
+        }
+      },
+      "operator": {
+        "title": "Select operator",
+        "description": "Region: {area}. Choose the operator whose network serves your address. The settlement does not automatically determine your operator or queue.",
+        "data": {
+          "operator": "Electricity distribution operator",
+          "action": "Next action"
+        }
+      },
+      "queue": {
+        "title": "Select exact queue",
+        "description": "Operator: {operator}. Select the exact queue verified for your address.",
         "data": {
           "name": "Name",
-          "queue": "Queue"
+          "queue": "Queue",
+          "action": "Next action"
         }
       }
     },
     "abort": {
-      "already_configured": "This queue is already configured.",
-      "reconfigure_successful": "The queue has been updated.",
+      "already_configured": "This region, operator and queue are already configured.",
+      "reconfigure_successful": "The location, operator and queue have been updated.",
       "invalid_entry": "The configuration entry could not be found."
     },
     "error": {
-      "cannot_connect": "Cannot retrieve queues. Check the connection and try again.",
+      "cannot_connect": "Cannot retrieve Alerts Energy data. Check the connection and try again.",
       "no_queues": "The source has not published any queues for this operator yet.",
-      "invalid_queue": "This queue is no longer available. Select an exact queue from the list."
+      "invalid_queue": "This queue is no longer available. Select an exact queue from the list.",
+      "no_areas": "The source returned no regions. Try again later.",
+      "no_operators": "The source has no operators for this region.",
+      "invalid_selection": "This choice is no longer available. Select from the current list.",
+      "no_localities": "The source returned no settlements for this territory. Retry or continue with the regional schedule."
     }
   },
   "entity": {

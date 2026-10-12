@@ -93,3 +93,12 @@ def test_dst_day(schedule, freezer):
 def test_missing_schedule():
     assert schedule_day_status(None, "today") == "not_found"
     assert schedule_day_status({"schedule_found": False}, "today") == "not_found"
+
+
+@pytest.mark.parametrize(
+    "hours,expected",
+    [([0] * 24, "published"), ([1] * 24, "invalid"), ([], "unpublished")],
+)
+def test_no_shutdowns_requires_valid_zero_array(schedule, hours, expected):
+    schedule.update(today=hours, todayStatus="NoShutdowns")
+    assert schedule_day_status(schedule, "today") == expected

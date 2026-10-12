@@ -57,3 +57,89 @@ def public_rows(schedule):
         row["queue"] = queue
         rows.append(row)
     return rows
+
+
+@pytest.fixture
+def directory(aioclient_mock, schedule):
+    """A synthetic region/district/community/city directory with exact suppliers."""
+    from custom_components.alerts_energy_outages.const import API_BASE_URL, API_URL
+
+    def territory(katottg, slug, name, category, level, parent=None):
+        return {
+            "katottg": katottg,
+            "slug": slug,
+            "name": name,
+            "full_name": name,
+            "category": category,
+            "level": level,
+            "parent_katottg": parent,
+        }
+
+    kyiv = territory("UA80000000000093317", "kyiv", "Київ", "K", 1)
+    area = territory(
+        "UA32000000000030281", "kyivska-oblast", "Київська область", "O", 1
+    )
+    other = territory(
+        "UA12000000000090473",
+        "dnipropetrovska-oblast",
+        "Дніпропетровська область",
+        "O",
+        1,
+    )
+    district = territory(
+        "UA32080000000084076",
+        "buchanskij-rayon",
+        "Бучанський район",
+        "P",
+        2,
+        area["katottg"],
+    )
+    community = territory(
+        "UA32080070000050759",
+        "buchanska-terytorialna-hromada",
+        "Бучанська громада",
+        "H",
+        3,
+        district["katottg"],
+    )
+    city = territory(
+        "UA32080070010051388", "misto-bucha", "Буча", "M", 4, community["katottg"]
+    )
+    root = [kyiv, area, other]
+    aioclient_mock.get(f"{API_BASE_URL}/atus", json=root)
+    for parent, children in [
+        (area, [district]),
+        (district, [community]),
+        (community, [city]),
+        (other, []),
+    ]:
+        aioclient_mock.get(f"{API_BASE_URL}/atus/{parent['katottg']}", json=children)
+    for current in root:
+        operator = (
+            DEFAULT_OPERATOR if current["slug"] == "kyiv" else "regional_operator"
+        )
+        operators = {operator: "Test network", "alternate_operator": "Other network"}
+        aioclient_mock.get(
+            f"{API_BASE_URL}/source-registry/areas/{current['slug']}/suppliers",
+            json=[
+                {"areaSlug": current["slug"], "slug": key, "supplierName": label}
+                for key, label in operators.items()
+            ],
+        )
+        rows = []
+        for queue in ["1.1", "2.1", "2.2", "60.1"]:
+            row = deepcopy(schedule)
+            row.update(initiator=operator, queue=queue)
+            rows.append(row)
+        aioclient_mock.get(
+            f"{API_BASE_URL}/source-registry/areas/{current['slug']}/shutdowns",
+            json=rows,
+        )
+    return {
+        "root": root,
+        "area": area,
+        "district": district,
+        "community": community,
+        "city": city,
+        "kyiv_url": API_URL,
+    }

@@ -11,10 +11,23 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.event import async_track_utc_time_change
 
 from .api import AlertsEnergyApi
-from .const import DOMAIN
+from .const import CONF_AREA, DEFAULT_AREA, DOMAIN
 from .coordinator import AlertsEnergyCoordinator
 
 PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR]
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Add the historical Kyiv area without changing registry identity."""
+    if entry.version > 1:
+        return False
+    if entry.minor_version < 2:
+        hass.config_entries.async_update_entry(
+            entry,
+            data={CONF_AREA: DEFAULT_AREA, "area_name": "Київ", **entry.data},
+            minor_version=2,
+        )
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

@@ -80,3 +80,106 @@ async def test_queue_filter(hass, aioclient_mock, public_rows):
     assert await AlertsEnergyApi(async_get_clientsession(hass)).async_get_queues(
         DEFAULT_OPERATOR
     ) == ["1.1", "2.1", "60.1"]
+
+
+async def test_region_endpoints_and_operator_isolation(hass, aioclient_mock, schedule):
+    from custom_components.alerts_energy_outages.const import API_BASE_URL
+
+    area = "dnipropetrovska-oblast"
+    rows = []
+    for operator, queue in [("oblenergo", "2.2"), ("cek", "7.1")]:
+        row = deepcopy(schedule)
+        row.update(initiator=operator, queue=queue)
+        rows.append(row)
+    url = f"{API_BASE_URL}/source-registry/areas/{area}/shutdowns"
+    aioclient_mock.get(url, json=rows)
+    api = AlertsEnergyApi(async_get_clientsession(hass))
+    assert await api.async_get_queues("cek", area) == ["7.1"]
+    assert (await api.async_get_schedule("oblenergo", "2.2", area))[
+        "initiator"
+    ] == "oblenergo"
+    assert (await api.async_get_schedule("cek", "2.2", area))["schedule_found"] is False
+    assert all(str(request[1]) == url for request in aioclient_mock.mock_calls)
+
+
+async def test_directory_and_operators(hass, directory):
+    api = AlertsEnergyApi(async_get_clientsession(hass))
+    areas = await api.async_get_areas()
+    assert {area.slug for area in areas} == {
+        "kyiv",
+        "kyivska-oblast",
+        "dnipropetrovska-oblast",
+    }
+    assert (await api.async_get_children(directory["community"]["katottg"]))[
+        0
+    ].name == "Буча"
+    assert await api.async_get_operators("kyivska-oblast") == {
+        "regional_operator": "Test network",
+        "alternate_operator": "Other network",
+    }
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"katottg": "bad"},
+        {"level": True},
+        {"name": ""},
+        {"parent_katottg": "other"},
+        {"slug": "../outside"},
+        {"category": None},
+    ],
+)
+async def test_invalid_territory_is_not_a_choice(
+    hass, aioclient_mock, directory, change
+):
+    from custom_components.alerts_energy_outages.const import API_BASE_URL
+
+    row = {**directory["root"][0], **change}
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(f"{API_BASE_URL}/atus", json=[row])
+    with pytest.raises(AlertsEnergyApiError, match="territory format"):
+        await AlertsEnergyApi(async_get_clientsession(hass)).async_get_areas()
+
+
+async def test_duplicate_directory_ids(hass, aioclient_mock, directory):
+    from custom_components.alerts_energy_outages.const import API_BASE_URL
+
+    row = directory["root"][0]
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(f"{API_BASE_URL}/atus", json=[row, row])
+    with pytest.raises(AlertsEnergyApiError, match="Duplicate territory"):
+        await AlertsEnergyApi(async_get_clientsession(hass)).async_get_areas()
+
+
+@pytest.mark.parametrize(
+    "change", [{"areaSlug": "another-area"}, {"slug": None}, {"supplierName": None}]
+)
+async def test_malformed_supplier(hass, aioclient_mock, change):
+    from custom_components.alerts_energy_outages.const import API_BASE_URL
+
+    row = {"areaSlug": "kyiv", "slug": "operator", "supplierName": "Network", **change}
+    aioclient_mock.get(
+        f"{API_BASE_URL}/source-registry/areas/kyiv/suppliers", json=[row]
+    )
+    with pytest.raises(AlertsEnergyApiError, match="operator format"):
+        await AlertsEnergyApi(async_get_clientsession(hass)).async_get_operators("kyiv")
+
+
+async def test_village_name_does_not_use_incorrect_source_prefix(
+    hass, aioclient_mock, directory
+):
+    from custom_components.alerts_energy_outages.const import API_BASE_URL
+
+    row = {
+        **directory["city"],
+        "name": "Village",
+        "category": "C",
+        "full_name": "city Village",
+    }
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(f"{API_BASE_URL}/atus/{row['parent_katottg']}", json=[row])
+    result = await AlertsEnergyApi(async_get_clientsession(hass)).async_get_children(
+        row["parent_katottg"]
+    )
+    assert result[0].name == "Village"
