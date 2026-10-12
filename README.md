@@ -55,13 +55,18 @@ The integration domain is `alerts_energy_outages`.
 
 ## Entities
 
-For each configured outage group, the integration creates three entities:
+For each configured outage group, the integration creates eight entities:
 
 | Entity | Purpose |
 |---|---|
 | Today schedule | All outage periods for the current day |
 | Tomorrow schedule | All published outage periods for the next day |
 | Outage now | Turns on when the current time falls within an outage period |
+| Next outage | Timestamp of the next future outage |
+| Expected restoration | Published end of the current or next outage |
+| Outage duration | Full planned duration in minutes when both boundaries are known |
+| Data status | Publication, validity and availability of source data |
+| Last successful API update | Last successful response time, retained on failure |
 
 Home Assistant generates entity IDs from the config entry name and entity name. You can see the current IDs under **Settings → Devices & services → Alerts Energy Outages → Entities**.
 
@@ -130,6 +135,33 @@ It is only needed for manual setup without the custom integration. For new insta
 - only operators and exact queues provided by Alerts Energy are supported; a region in the directory does not guarantee a published schedule;
 - missing, malformed, undated, stale, or unpublished daily schedules are unavailable; a published array of 24 zeros means no scheduled outages;
 - the data source is a third-party service and its API format may change.
+
+## Forecast and data health in v2.4.0
+
+After upgrading and restarting HA, the original three entities keep their identities. Five additive entities appear under **Settings → Devices & services → Alerts Energy Outages → Entities**.
+
+| Entity / key | Meaning |
+|---|---|
+| Next outage / `next_outage` | Timestamp of the next future outage start, excluding an ongoing outage |
+| Expected restoration / `expected_restoration` | Published end of the current outage, or the nearest upcoming one when none is ongoing |
+| Outage duration / `outage_duration` | Total scheduled minutes for that same current/upcoming outage, not a countdown |
+| Data status / `data_status` | Published, unpublished, stale date, invalid data, missing queue, retrieval error or emergency outages |
+| Last successful API update / `last_successful_update` | Last successful response time, retained on failure; distinct from source publication timestamp `updated` |
+
+Timestamp entities are displayed in HA's timezone. Calculations use Europe/Kyiv and account for DST transitions. Forecast duration has no statistics state class.
+
+### Interpretation
+
+- When published schedules contain no future outage, time/duration states are `unknown`, not zero. `coverage_end` shows the published horizon.
+- An outage reaching midnight has an unknown restoration/duration if the following day is unpublished. Midnight never implies restoration. `forecast_status=end_not_published` explains this.
+- An ongoing outage at the beginning of today's coverage has an unknown full start/duration, since yesterday is absent. Its published restoration remains available; duration uses `forecast_status=start_not_published`.
+- Continuous outages merge across midnight only when both days are published. Missing/stale schedules and API failures make schedule/forecast entities unavailable.
+- `outage_context=current/next/none` and `outage_start/outage_end` identify the window behind restoration/duration. Next outage may refer to the following event while one is ongoing.
+- Information entities remain visible during failures. Data status covers today; attributes expose today/tomorrow separately. Machine states are stable; frontend labels are English/Ukrainian.
+
+Add these entities to an Entities card. Use the next outage timestamp in a time trigger for notifications, or `outage_now` on/off transitions for the start/end of a scheduled outage. These are planned schedules, not measurements of grid power.
+
+Active entries in the same area share one 60-second API poller and clock listener. Operators/queues stay independent; removing one entry keeps the rest working, and removing the last releases the area. Setup/reconfiguration forms still fetch fresh lists for validation.
 
 ## Location selection in v2.3.0
 

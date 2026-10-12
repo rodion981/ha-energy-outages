@@ -19,6 +19,12 @@ async def async_get_config_entry_diagnostics(
     data = coordinator.data or {}
     return {
         "area": coordinator.area,
+        "data_status": coordinator.data_status,
+        "last_successful_update": (
+            coordinator.last_successful_update.isoformat()
+            if coordinator.last_successful_update
+            else None
+        ),
         "last_update_success": coordinator.last_update_success,
         "operator": entry.data["operator"],
         "queue": entry.data["queue"],

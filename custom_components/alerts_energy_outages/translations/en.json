@@ -62,6 +62,30 @@
       },
       "tomorrow": {
         "name": "Tomorrow's schedule"
+      },
+      "next_outage": {
+        "name": "Next outage"
+      },
+      "expected_restoration": {
+        "name": "Expected restoration"
+      },
+      "outage_duration": {
+        "name": "Outage duration"
+      },
+      "data_status": {
+        "name": "Data status",
+        "state": {
+          "published": "Today’s schedule published",
+          "unpublished": "Schedule not published",
+          "stale": "Schedule date is stale",
+          "invalid": "Invalid source data",
+          "not_found": "Queue not found",
+          "connection_error": "Cannot retrieve source data",
+          "emergency": "Emergency outages"
+        }
+      },
+      "last_successful_update": {
+        "name": "Last successful API update"
       }
     },
     "binary_sensor": {

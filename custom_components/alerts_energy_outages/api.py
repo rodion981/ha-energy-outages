@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import quote
 
-from aiohttp import ClientError, ClientSession, ClientTimeout
+from aiohttp import ClientError, ClientSession, ClientTimeout, ContentTypeError
 
 from .const import API_BASE_URL, DEFAULT_AREA, SITE_URL
 
@@ -25,6 +25,15 @@ class Territory:
 
 class AlertsEnergyApiError(Exception):
     """Raised when Alerts Energy cannot provide a valid schedule."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        reason: Literal["connection_error", "invalid"] = "connection_error",
+    ) -> None:
+        super().__init__(message)
+        self.reason = reason
 
 
 class AlertsEnergyApi:
@@ -47,12 +56,17 @@ class AlertsEnergyApi:
                 response.raise_for_status()
                 payload = await response.json()
         except (ClientError, TimeoutError, ValueError) as err:
-            raise AlertsEnergyApiError(str(err)) from err
+            raise AlertsEnergyApiError(
+                str(err),
+                reason="invalid"
+                if isinstance(err, (ValueError, ContentTypeError))
+                else "connection_error",
+            ) from err
 
         if not isinstance(payload, list) or any(
             not isinstance(item, dict) for item in payload
         ):
-            raise AlertsEnergyApiError("Unexpected response format")
+            raise AlertsEnergyApiError("Unexpected response format", reason="invalid")
         return payload
 
     async def _async_get_territories(self, parent: str | None) -> list[Territory]:

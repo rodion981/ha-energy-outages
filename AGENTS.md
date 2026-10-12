@@ -6,8 +6,9 @@
 - `manifest.json`, `hacs.json`: версія/HA metadata; `const.py`: operator, endpoint, polling, source timezone.
 - `config_flow.py`: область → район/громада/населений пункт → оператор → черга; retry/back, duplicate protection, atomic reconfigure зі збереженням entity identity.
 - `api.py`: HA-managed aiohttp session; публічні GET /atus, /atus/{katottg}, /source-registry/areas/{area}/{suppliers,shutdowns}; Territory validation. Міський довідник не визначає чергу або оператора за адресою.
-- `__init__.py`: first refresh, platform setup/unload, coordinator у `hass.data`, UTC clock listener із cleanup.
-- `coordinator.py`: polling 60 с, UpdateFailed, day validity, half-hour periods, state formatting.
+- `__init__.py`: first refresh, platform setup/unload, entry adapters у `hass.data`, shared area pool у DATA_AREAS; ref-counted acquire/release та cleanup на setup failure/unload.
+- `coordinator.py`: area coordinator poll 60 с + один half-hour clock; entry adapters без окремого poll, shared health/last success, day validity. Не прив’язуй shared source до першого ConfigEntry; зберігай pref_disable_polling.
+- `forecast.py`: UTC half-hour timeline із Kyiv wall codes, DST, поточний/наступний період, невідомий кінець на краю published horizon.
 - `sensor.py`, `binary_sensor.py`: незалежна availability днів і поточне планове відключення; entity properties без I/O.
 - `diagnostics.py`: allowlist health/public metadata; `strings.json`, `translations/en.json`, `translations/uk.json`: UI.
 - `includes/packages/energyua_22.yaml`: окремий сучасний YAML-пакет для точної 2.2, потребує HA timezone Europe/Kyiv; автоматизація в `automations/` залежить від його IDs.
@@ -31,6 +32,7 @@
 - Дні незалежні. Невідомі/невалідні/недатовані/застарілі графіки не означають «без відключень» чи off.
 - Source timezone: Europe/Kyiv. Перевіряй midnight, DST, half-hour boundaries та unavailable/recovery. Clock updates мають працювати без зміни payload.
 - Коди: 0=світло є, 1=немає всю годину, 2=перші 30 хв, 3=другі 30 хв; лише int, не bool/string. NoShutdowns приймай лише з актуальною датою й 24 нулями; emergency/невідомі коди не перетворюй на off. Інтервали [start,end), межі 0..48, кінець доби 24:00.
+- Нові forecast keys additive: next_outage (лише майбутнє), expected_restoration/outage_duration (current-or-next). Unknown start/end/no window -> None, не нуль/північ. Відключення на початку today може починатися вчора: full duration невідома. Тривалість у хвилинах без state_class. Data status/last_successful_update залишаються доступними при API failure; це response time, не source publication.
 - State має ліміт 255 символів; усі періоди зберігай в атрибутах. Локалізований текст не є machine contract.
 - HA-managed session не закривай самостійно; blocking I/O не додавай. Зберігай first refresh до platform setup, успішний unload і timer cleanup.
 - Legacy YAML: зберігай entity IDs/friendly names та залежні автоматизації. Не використовуй видалені `platform: template` чи `from_json(default)`, несумісний із HA 2024.6.

@@ -30,4 +30,6 @@ Optional local hassfest with Docker (read-only checkout mount):
 docker run --rm -v "$PWD:/github/workspace:ro" ghcr.io/home-assistant/hassfest
 ```
 
-Prepared release notes: [docs/RELEASE_NOTES_v2.3.0.md](docs/RELEASE_NOTES_v2.3.0.md). Hosted CI/HACS must pass for the exact commit/tag before publication.
+For forecasts, test half-hour/midnight/DST boundaries, unknown start/end at the published horizon, typed entities and an actual HA timestamp automation. For shared polling, prove concurrent setup coalesces requests, one entry unloading preserves the others, failed setup releases resources and `pref_disable_polling` is respected.
+
+Prepared release notes: [docs/RELEASE_NOTES_v2.4.0.md](docs/RELEASE_NOTES_v2.4.0.md). Hosted CI/HACS must pass for the exact commit/tag before publication.

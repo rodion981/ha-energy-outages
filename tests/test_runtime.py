@@ -32,7 +32,7 @@ async def test_setup_registry_reload(hass, entry, schedule):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
         ids = entity_ids(hass, entry)
-        assert len(ids) == 3
+        assert len(ids) == 8
         assert hass.states.get(ids["today"]).state == "12:00–12:30"
         assert hass.states.get(ids["tomorrow"]).state == "No outages"
         binary = hass.states.get(ids["now"])
@@ -73,7 +73,9 @@ async def test_transport_failure_recovery(hass, entry, schedule):
         fetch.side_effect = AlertsEnergyApiError("offline")
         await coordinator.async_refresh()
         assert all(
-            hass.states.get(item).state == "unavailable" for item in ids.values()
+            hass.states.get(item).state == "unavailable"
+            for key, item in ids.items()
+            if key not in {"status", "update"}
         )
         fetch.side_effect = None
         await coordinator.async_refresh()
@@ -88,8 +90,12 @@ async def test_missing_queue_loads_unavailable(hass, entry):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
     ids = entity_ids(hass, entry)
-    assert len(ids) == 3
-    assert all(hass.states.get(item).state == "unavailable" for item in ids.values())
+    assert len(ids) == 8
+    assert all(
+        hass.states.get(item).state == "unavailable"
+        for key, item in ids.items()
+        if key not in {"status", "update"}
+    )
 
 
 async def test_first_refresh_retry(hass, entry):
@@ -130,7 +136,9 @@ async def test_midnight_marks_stale(hass, entry, schedule, freezer):
         async_fire_time_changed(hass, boundary)
         await hass.async_block_till_done()
         assert all(
-            hass.states.get(item).state == "unavailable" for item in ids.values()
+            hass.states.get(item).state == "unavailable"
+            for key, item in ids.items()
+            if key not in {"status", "update"}
         )
 
 
@@ -159,7 +167,7 @@ async def test_reconfigure_preserves_registry(hass, entry, schedule, directory):
         assert entity_ids(hass, entry) == ids
         assert (
             len(er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id))
-            == 3
+            == 8
         )
         assert (
             dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)[0].id
@@ -184,7 +192,15 @@ async def test_diagnostics_allowlist(hass, entry, schedule):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
     result = await async_get_config_entry_diagnostics(hass, entry)
-    assert set(result) == {"area", "last_update_success", "operator", "queue", "days"}
+    assert set(result) == {
+        "area",
+        "data_status",
+        "last_successful_update",
+        "last_update_success",
+        "operator",
+        "queue",
+        "days",
+    }
     assert result["days"]["today"]["status"] == "published"
     assert "private_extra" not in str(result)
 

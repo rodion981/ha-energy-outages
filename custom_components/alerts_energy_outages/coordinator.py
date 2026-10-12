@@ -77,7 +77,9 @@ def format_periods(
     return "…"
 
 
-def schedule_day_status(data: dict[str, Any] | None, day: str) -> str:
+def schedule_day_status(
+    data: dict[str, Any] | None, day: str, now: datetime | None = None
+) -> str:
     """Distinguish published schedules from missing, stale or invalid data."""
     if not data or not data.get("schedule_found", True):
         return "not_found"
@@ -90,7 +92,7 @@ def schedule_day_status(data: dict[str, Any] | None, day: str) -> str:
         or any(type(value) is not int or value not in range(4) for value in hours)
     ):
         return "invalid"
-    today = datetime.now(SCHEDULE_TIME_ZONE).date()
+    today = (now or dt_util.utcnow()).astimezone(SCHEDULE_TIME_ZONE).date()
     expected = today + timedelta(days=day == "tomorrow")
     if data.get(f"{day}Date") != expected.isoformat():
         return "stale"
@@ -227,6 +229,23 @@ class AlertsEnergyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @property
     def last_successful_update(self) -> datetime | None:
         return self.source.last_successful_update
+
+    @property
+    def data_status(self) -> str:
+        """Explain unavailable data without treating transport errors as outages."""
+        if not self.last_update_success:
+            cause = self.last_exception.__cause__ if self.last_exception else None
+            if isinstance(cause, AlertsEnergyApiError):
+                return cause.reason
+            return "connection_error"
+        now = dt_util.utcnow()
+        if (
+            self.data.get("todayDate")
+            == now.astimezone(SCHEDULE_TIME_ZONE).date().isoformat()
+            and self.data.get("todayStatus") == "EmergencyShutdowns"
+        ):
+            return "emergency"
+        return schedule_day_status(self.data, "today", now)
 
     @callback
     def _handle_source_update(self) -> None:
