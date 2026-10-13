@@ -24,9 +24,7 @@ jobs:
       - if: matrix.python == '3.12'
         run: pip install -r requirements-ha-minimum.txt
       - if: matrix.python == '3.14'
-        run: |
-          pip install jsonpath-python==1.1.6
-          pip install --no-deps homeassistant==2026.10.0
+        run: pip install --no-deps homeassistant==2026.10.0
       - run: ruff check .
       - run: ruff format --check .
       - run: python scripts/validate.py

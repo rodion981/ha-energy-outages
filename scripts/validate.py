@@ -12,15 +12,6 @@ ROOT = Path(__file__).resolve().parents[1]
 INTEGRATION = ROOT / "custom_components" / "alerts_energy_outages"
 
 
-class ExampleLoader(yaml.SafeLoader):
-    """Parse the example's include tag without reading external configuration."""
-
-
-ExampleLoader.add_constructor(
-    "!include_dir_named", lambda loader, node: loader.construct_scalar(node)
-)
-
-
 def keys(value: object, prefix: str = "") -> set[str]:
     """Collect nested translation keys."""
     result = {prefix}
@@ -39,15 +30,10 @@ def main() -> None:
     source = json.loads((INTEGRATION / "strings.json").read_text(encoding="utf-8"))
     for path in (INTEGRATION / "translations").glob("*.json"):
         assert keys(json.loads(path.read_text(encoding="utf-8"))) == keys(source), path
-    for directory in ("includes", "automations", ".github"):
-        for pattern in ("*.yaml", "*.yml"):
-            for path in (ROOT / directory).rglob(pattern):
-                yaml.safe_load(path.read_text(encoding="utf-8"))
+    for pattern in ("*.yaml", "*.yml"):
+        for path in (ROOT / ".github").rglob(pattern):
+            yaml.safe_load(path.read_text(encoding="utf-8"))
     yaml.safe_load((ROOT / ".pre-commit-config.yaml").read_text(encoding="utf-8"))
-    yaml.load(
-        (ROOT / "configuration.yaml.example").read_text(encoding="utf-8"),
-        Loader=ExampleLoader,
-    )
     manifest = json.loads((INTEGRATION / "manifest.json").read_text(encoding="utf-8"))
     assert list(manifest) == [
         "domain",

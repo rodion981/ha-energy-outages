@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### English
+- Remove the obsolete standalone YAML package, its notification example, configuration include example and dedicated tests/dependencies. Keep the custom integration and ConfigEntry migrations intact.
+- Document tomorrow-schedule notifications using the integration's current entities and attributes; update repository validation and agent guidance.
+
+### Українською
+- Прибрано застарілий окремий YAML-пакет, його приклад сповіщень, приклад підключення та окремі тести/залежності. Custom integration та міграції ConfigEntry збережені.
+- Описано сповіщення про графік на завтра через актуальні сутності й атрибути інтеграції; оновлено валідацію репозиторію та правила для агентів.
+
 ## v2.4.2 (2026-10-13)
 
 ### English
@@ -61,7 +71,6 @@
 - Update clock-dependent states at half-hour boundaries, preserve all periods in attributes and keep states within 255 characters.
 - Correct outage binary sensor semantics and translate the no-outage label for English/Ukrainian.
 - Add allowlisted diagnostics, runtime/regression tests, lint, formatting, type checks and HACS/hassfest CI.
-- Migrate legacy YAML to modern templates with stable IDs, all outage periods and unavailable-data handling; correct the automation include example.
 - Include local brand icons and repository metadata required by HACS validation.
 - Retain HA 2024.6+ support using the compatible entity callback API.
 
@@ -74,7 +83,6 @@ Existing v2.1.x entries are preserved. If your queue disappears, explicitly sele
 - Оновлення на півгодинних межах, повні періоди в атрибутах і дотримання ліміту стану 255 символів.
 - Коректна семантика binary sensor і український/англійський текст відсутності відключень.
 - Diagnostics, runtime/regression-тести, lint, formatting, type checking та HACS/hassfest CI.
-- Сучасний legacy YAML зі сталими IDs, усіма періодами та обробкою unavailable; виправлений приклад include автоматизацій.
 - Локальна іконка й metadata репозиторію для успішної перевірки HACS.
 - Збережена підтримка HA 2024.6+ завдяки сумісному callback API.
 

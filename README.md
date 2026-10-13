@@ -102,6 +102,8 @@ Forecast sensors expose `outage_context` (`current`, `next`, `none`), `outage_st
 
 For automations, use typed timestamps, the binary sensor and machine attributes instead of matching translated schedule text.
 
+For tomorrow's schedule notifications, select your **Tomorrow schedule** entity and watch its state and attribute changes. Send only while it is available and `schedule_status` is `published`; build the message from `date` and all `periods`. An empty `periods` list on a published schedule means no planned outages. To notify about corrections too, compare `date` and `periods` with the last sent schedule. Persist that record in a Home Assistant helper to prevent duplicates after reconnects or restarts; changes to `updated` alone should not resend a notification. Create the automation and select your notification service in Home Assistant.
+
 ## Source and updates
 
 The integration reads the public Alerts Energy endpoint:

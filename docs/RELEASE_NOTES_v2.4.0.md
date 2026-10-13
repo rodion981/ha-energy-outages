@@ -10,7 +10,7 @@ Five additional entities and shared regional polling. / П’ять додатк
 - Статус даних пояснює відсутній, застарілий, неопублікований або некоректний графік, помилку API чи аварійні відключення. Інформаційні сутності залишаються видимими при збої; останній успішний час не стирається.
 - Кілька черг або операторів однієї області використовують один запит кожні 60 секунд і спільний часовий обробник. Видалення одного запису не зупиняє решту; останній запис звільняє ресурси.
 
-Оновлення: встановіть версію та перезапустіть Home Assistant. Існуючі три сутності, пристрій, налаштування та ідентифікатори зберігаються; загалом буде вісім сутностей на запис. Знайдіть нові в **Settings → Devices & services → Alerts Energy Outages → Entities** і додайте до картки Entities. Час наступного відключення можна вибрати в часовому тригері автоматизації. Нові сутності створює custom integration; legacy YAML-пакет залишається окремим варіантом.
+Оновлення: встановіть версію та перезапустіть Home Assistant. Існуючі три сутності, пристрій, налаштування та ідентифікатори зберігаються; загалом буде вісім сутностей на запис. Знайдіть нові в **Settings → Devices & services → Alerts Energy Outages → Entities** і додайте до картки Entities. Час наступного відключення можна вибрати в часовому тригері автоматизації.
 
 Це плановий графік, а не вимірювання фактичного живлення. Час успішного отримання API відрізняється від часу публікації графіка. Тривалість не є зворотним відліком і не записує статистику як вимірювання. Пошук черги за адресою не додавався. ConfigEntry schema не змінена; повернення до v2.3.0 підтримує регіональні налаштування, але прибирає нові можливості.
 
@@ -22,7 +22,7 @@ Five additional entities and shared regional polling. / П’ять додатк
 - Keep source health and the last successful response visible through failures; distinguish missing, stale, unpublished, invalid, emergency and connection-error states.
 - Share one 60-second request and clock listener per area across operators/queues. Unloading one entry preserves other entries; final unload releases the source.
 
-Upgrade: restart HA after installing. Existing entities, devices and configuration identity are preserved; each entry now has eight entities. Find the additions in the integration's Entities list, add them to an Entities card, or select the next outage timestamp in an automation time trigger. The legacy YAML package is unchanged.
+Upgrade: restart HA after installing. Existing entities, devices and configuration identity are preserved; each entry now has eight entities. Find the additions in the integration's Entities list, add them to an Entities card, or select the next outage timestamp in an automation time trigger.
 
 These are planned schedules, not measured grid power. API response time is distinct from schedule publication. Duration is not a countdown and has no measurement statistics state class. No address lookup is included. ConfigEntry schema is unchanged; v2.3.0 can read regional configuration but does not offer the new entities.
 
