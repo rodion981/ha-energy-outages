@@ -1,6 +1,6 @@
 # Changelog
 
-## v2.4.2 (Unreleased)
+## v2.4.2 (2026-10-13)
 
 ### English
 - Replace the integration icon with a refined lightning-and-clock mark in blue/yellow, supplied as transparent RGBA PNGs at 256 and 512 pixels.

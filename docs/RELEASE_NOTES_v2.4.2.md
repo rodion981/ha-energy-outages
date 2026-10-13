@@ -1,6 +1,6 @@
 # v2.4.2: refreshed integration icon / нова іконка інтеграції
 
-Prepared for release; not published. / Підготовлено до релізу, не опубліковано.
+Release date: 2026-10-13. / Дата релізу: 2026-10-13.
 
 ## Українською
 
@@ -26,5 +26,5 @@ This release does not fix the HACS 2.0.5 catalog placeholder, which is a separat
 
 - PNG dimensions, RGBA format, transparency and exact correspondence with the approved design.
 - Small-size previews at 32/48/64 px on light and dark backgrounds.
-- Repository metadata, Ruff, formatting, mypy and regression tests on both HA baselines.
+- Repository metadata, Ruff, formatting and mypy passed; 141 regression tests passed on each HA baseline (2024.6 and 2026.10).
 - Hosted HACS/hassfest and exact PR/main/tag checks required before publication.
