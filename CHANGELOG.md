@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v2.4.3 (2026-10-13)
 
 ### English
 - Remove the obsolete standalone YAML package, its notification example, configuration include example and dedicated tests/dependencies. Keep the custom integration and ConfigEntry migrations intact.
