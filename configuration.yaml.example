@@ -1,6 +1,0 @@
-# configuration.yaml.example
-homeassistant:
-  packages: !include_dir_named includes/packages
-
-# Якщо хочете підключати автоматизації з файлів:
-# automation: !include_dir_list automations

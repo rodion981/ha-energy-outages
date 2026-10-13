@@ -11,8 +11,8 @@
 - `forecast.py`: UTC half-hour timeline із Kyiv wall codes, DST, поточний/наступний період, невідомий кінець на краю published horizon.
 - `sensor.py`, `binary_sensor.py`: незалежна availability днів і поточне планове відключення; entity properties без I/O.
 - `diagnostics.py`: allowlist health/public metadata; `strings.json`, `translations/en.json`, `translations/uk.json`: UI.
-- `includes/packages/energyua_22.yaml`: окремий сучасний YAML-пакет для точної 2.2, потребує HA timezone Europe/Kyiv; автоматизація в `automations/` залежить від його IDs.
-- Читай обидва README, `CONTRIBUTING.md`, `CHANGELOG.md` та `configuration.yaml.example` перед змінами встановлення/поведінки.
+- Репозиторій підтримує встановлення custom integration через HACS/UI. Приклади автоматизацій мають використовувати її фактичні entity IDs і машинні атрибути.
+- Читай обидва README, `CONTRIBUTING.md` та `CHANGELOG.md` перед змінами встановлення/поведінки.
 
 ## Стиль і перевірки
 - Python 3.12+: 4 пробіли, подвійні лапки, англійські docstrings, анотації, snake_case, async networking.
@@ -35,7 +35,7 @@
 - Нові forecast keys additive: next_outage (лише майбутнє), expected_restoration/outage_duration (current-or-next). Unknown start/end/no window -> None, не нуль/північ. Відключення на початку today може починатися вчора: full duration невідома. Тривалість у хвилинах без state_class. Data status/last_successful_update залишаються доступними при API failure; це response time, не source publication.
 - State має ліміт 255 символів; усі періоди зберігай в атрибутах. Локалізований текст не є machine contract.
 - HA-managed session не закривай самостійно; blocking I/O не додавай. Зберігай first refresh до platform setup, успішний unload і timer cleanup.
-- Legacy YAML: зберігай entity IDs/friendly names та залежні автоматизації. Не використовуй видалені `platform: template` чи `from_json(default)`, несумісний із HA 2024.6.
-- Не вмикай custom integration і YAML-пакет для тієї самої черги одночасно. Не змінюй робочий HA під час тестів.
+- Для сповіщень про завтра перевіряй availability і schedule_status=published, використовуй date та повні periods. Відрізняй зміну графіка від updated/API recovery; захист від повторів має враховувати перезапуск HA.
+- Не змінюй робочий HA під час тестів.
 - Після змін запускай релевантні gates. Окремо повідомляй static, runtime, hosted CI, live API та frontend результати; пропущені перевірки не називай успішними.
-- Push/tag/release лише з дозволу власника й після релевантних gates; двомовні release notes. Старий перехід із yasno_outages залишається ручним і не належить до поточного встановлення.
+- Push/tag/release лише з дозволу власника й після релевантних gates; двомовні release notes.
