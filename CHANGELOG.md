@@ -1,5 +1,15 @@
 # Changelog
 
+## v2.4.2 (Unreleased)
+
+### English
+- Replace the integration icon with a refined lightning-and-clock mark in blue/yellow, supplied as transparent RGBA PNGs at 256 and 512 pixels.
+- Outage logic, configuration, entity/device identities and supported HA versions are unchanged. The HACS catalog placeholder remains a separate HACS issue.
+
+### Українською
+- Нова іконка інтеграції: доопрацьована блискавка з годинником у синьо-жовтих кольорах, RGBA PNG 256 і 512 px з прозорими кутами.
+- Логіка графіків, налаштування, ідентифікатори сутностей/пристроїв і підтримувані версії HA збережені. Заглушка в каталозі HACS залишається окремою проблемою HACS.
+
 ## v2.4.1 (2026-10-12)
 
 ### English

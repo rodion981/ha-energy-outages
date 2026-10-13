@@ -2,7 +2,7 @@
 
 ## Архітектура
 - `custom_components/alerts_energy_outages/`: custom integration, domain `alerts_energy_outages`.
-- `brand/icon.png`, `brand/icon@2x.png`: локальна іконка для HA 2026.3+ та HACS; старі HA її не використовують.
+- `brand/icon.png`, `brand/icon@2x.png`: локальна іконка для HA 2026.3+ (RGBA 256/512 px). Старі HA її не використовують; HACS 2.0.5 може показувати заглушку замість локальної іконки.
 - `manifest.json`, `hacs.json`: версія/HA metadata; `const.py`: operator, endpoint, polling, source timezone.
 - `config_flow.py`: область → район/громада/населений пункт → оператор → черга; retry/back, duplicate protection, atomic reconfigure зі збереженням entity identity.
 - `api.py`: HA-managed aiohttp session; публічні GET /atus, /atus/{katottg}, /source-registry/areas/{area}/{suppliers,shutdowns}; Territory validation. Міський довідник не визначає чергу або оператора за адресою.
