@@ -10,5 +10,5 @@ def test_version_and_minimum():
     )
     hacs = json.loads(Path("hacs.json").read_text())
     assert manifest["domain"] == "alerts_energy_outages"
-    assert manifest["version"] == "2.4.1"
+    assert manifest["version"] == "2.4.2"
     assert hacs["homeassistant"] == "2024.6.0"
