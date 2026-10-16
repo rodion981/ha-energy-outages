@@ -169,7 +169,7 @@ async def test_disable_polling_and_enabled_subscriber(hass, entry, schedule, fre
         assert fetch.call_count == 2
         assert await hass.config_entries.async_unload(other.entry_id)
         await hass.async_block_till_done()
-        boundary += timedelta(seconds=65)
+        boundary += timedelta(seconds=SCAN_INTERVAL_SECONDS + 5)
         freezer.move_to(boundary)
         async_fire_time_changed(hass, boundary)
         await hass.async_block_till_done()
