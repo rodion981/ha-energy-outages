@@ -17,4 +17,4 @@ SCHEDULE_TIME_ZONE: Final = ZoneInfo("Europe/Kyiv")
 SITE_URL: Final = "https://alerts.energy"
 API_BASE_URL: Final = f"{SITE_URL}/api/v1"
 API_URL: Final = f"{API_BASE_URL}/source-registry/areas/{DEFAULT_AREA}/shutdowns"
-SCAN_INTERVAL_SECONDS: Final = 60
+SCAN_INTERVAL_SECONDS: Final = 900
