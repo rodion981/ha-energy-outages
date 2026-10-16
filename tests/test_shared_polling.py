@@ -64,7 +64,9 @@ async def test_one_request_for_multiple_queues_and_surviving_owner(
         assert await hass.config_entries.async_unload(entry.entry_id)
         await hass.async_block_till_done()
         assert source.users == 1
-        boundary = datetime(2026, 10, 7, 9, 1, 5, tzinfo=UTC)
+        boundary = datetime(2026, 10, 7, 9, tzinfo=UTC) + timedelta(
+            seconds=SCAN_INTERVAL_SECONDS + 5
+        )
         freezer.move_to(boundary)
         async_fire_time_changed(hass, boundary)
         await hass.async_block_till_done()
