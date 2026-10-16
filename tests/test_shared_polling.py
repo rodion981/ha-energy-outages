@@ -20,6 +20,7 @@ from custom_components.alerts_energy_outages.const import (
     DATA_AREAS,
     DEFAULT_OPERATOR,
     DOMAIN,
+    SCAN_INTERVAL_SECONDS,
 )
 from custom_components.alerts_energy_outages.coordinator import async_acquire_area
 
