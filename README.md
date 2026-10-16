@@ -16,7 +16,7 @@ Ukrainian power outage schedules from [Alerts Energy](https://alerts.energy/) di
 - An **Outage now** binary sensor for the current scheduled outage.
 - **Next outage**, **Expected restoration** and **Outage duration** for dashboards and automations.
 - **Data status** and **Last successful API update**, visible during source failures.
-- One shared API poll every 60 seconds per active region, including when several queues are configured.
+- One shared API poll every 15 minutes per active region, including when several queues are configured.
 - English and Ukrainian entity names and status labels.
 
 > [!NOTE]
