@@ -70,21 +70,104 @@
     }
   },
   "entity": {
+    "calendar": {
+      "outage_calendar": {
+        "name": "Outage calendar",
+        "state_attributes": {
+          "outage_type": {
+            "name": "Outage type",
+            "state": {
+              "planned": "Planned",
+              "possible": "Possible",
+              "mixed": "Planned and possible",
+              "none": "None"
+            }
+          }
+        }
+      }
+    },
+    "event": {
+      "schedule_changed": {
+        "name": "Schedule change",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "schedule_changed": "Schedule published or changed"
+            }
+          }
+        }
+      }
+    },
     "sensor": {
       "today": {
-        "name": "Today's schedule"
+        "name": "Today's schedule",
+        "state_attributes": {
+          "outage_type": {
+            "name": "Outage type",
+            "state": {
+              "planned": "Planned",
+              "possible": "Possible",
+              "mixed": "Planned and possible",
+              "none": "None"
+            }
+          }
+        }
       },
       "tomorrow": {
-        "name": "Tomorrow's schedule"
+        "name": "Tomorrow's schedule",
+        "state_attributes": {
+          "outage_type": {
+            "name": "Outage type",
+            "state": {
+              "planned": "Planned",
+              "possible": "Possible",
+              "mixed": "Planned and possible",
+              "none": "None"
+            }
+          }
+        }
       },
       "next_outage": {
-        "name": "Next outage"
+        "name": "Next outage",
+        "state_attributes": {
+          "outage_type": {
+            "name": "Outage type",
+            "state": {
+              "planned": "Planned",
+              "possible": "Possible",
+              "mixed": "Planned and possible",
+              "none": "None"
+            }
+          }
+        }
       },
       "expected_restoration": {
-        "name": "Expected restoration"
+        "name": "Expected restoration",
+        "state_attributes": {
+          "outage_type": {
+            "name": "Outage type",
+            "state": {
+              "planned": "Planned",
+              "possible": "Possible",
+              "mixed": "Planned and possible",
+              "none": "None"
+            }
+          }
+        }
       },
       "outage_duration": {
-        "name": "Outage duration"
+        "name": "Outage duration",
+        "state_attributes": {
+          "outage_type": {
+            "name": "Outage type",
+            "state": {
+              "planned": "Planned",
+              "possible": "Possible",
+              "mixed": "Planned and possible",
+              "none": "None"
+            }
+          }
+        }
       },
       "data_status": {
         "name": "Data status",
@@ -104,7 +187,24 @@
     },
     "binary_sensor": {
       "outage_now": {
-        "name": "Outage now"
+        "name": "Outage in schedule",
+        "state_attributes": {
+          "outage_type": {
+            "name": "Outage type",
+            "state": {
+              "planned": "Planned",
+              "possible": "Possible",
+              "mixed": "Planned and possible",
+              "none": "None"
+            }
+          },
+          "planned_now": {
+            "name": "Planned now"
+          },
+          "possible_now": {
+            "name": "Possible now"
+          }
+        }
       }
     }
   }

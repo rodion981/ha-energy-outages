@@ -9,7 +9,10 @@
 - `__init__.py`: first refresh, platform setup/unload, entry adapters у `hass.data`, shared area pool у DATA_AREAS; ref-counted acquire/release та cleanup на setup failure/unload.
 - `coordinator.py`: один area poller (типово 15 хв) + half-hour clock; найкоротший scan_interval у хвилинах серед активних entry contexts з увімкненим polling. Options flow: 1..1440 цілих хв; update listener переплановує без reload. Не прив’язуй shared source до першого ConfigEntry; зберігай pref_disable_polling та cleanup listener на unload.
 - `forecast.py`: UTC half-hour timeline із Kyiv wall codes, DST, поточний/наступний період, невідомий кінець на краю published horizon.
-- `sensor.py`, `binary_sensor.py`: незалежна availability днів і поточне планове відключення; entity properties без I/O.
+- `schedule.py`: normalize_day/DaySchedule, валідовані planned+Possible та union півгодин (не numeric max). Усі платформи використовують combined для планування; raw hours незмінний, окремі planned/possible_periods і outage_type. Зміни класифікації також є подіями; restore приймає старі list і нові двомасивні snapshots. Контракт і recorded fixtures: docs/POSSIBLE_OUTAGES.md, tests/test_possible.py.
+- `sensor.py`, `binary_sensor.py`: незалежна availability днів, union планових/можливих інтервалів і явний outage_type; entity properties без I/O.
+- `event.py`: schedule_changed з before/after/added/removed за датою; тихий startup/reload baseline, bounded snapshots у HA restore extra data, без I/O й додаткових запитів. `blueprints/automation/schedule_changes.yaml`: вибір каналу сповіщень, перевіряється справжньою HA automation у tests/test_schedule_events.py.
+- `calendar.py`: read-only CalendarEntity, незалежні published дні, shared dated_outage_periods/utc_midnight з forecast.py; краї покриття не є підтвердженим початком/відновленням. Перевіряй range overlap, midnight/DST, HTTP/get_events і lifecycle; calendar triggers мають власний цикл HA, для критичних сповіщень використовуй timestamp/event сутності.
 - `diagnostics.py`: allowlist health/public metadata; `strings.json`, `translations/en.json`, `translations/uk.json`: UI.
 - Репозиторій підтримує встановлення custom integration через HACS/UI. Приклади автоматизацій мають використовувати її фактичні entity IDs і машинні атрибути.
 - Читай обидва README, `CONTRIBUTING.md` та `CHANGELOG.md` перед змінами встановлення/поведінки.
@@ -19,8 +22,8 @@
 - Sensor descriptions: frozen/kw_only dataclass; сутності: CoordinatorEntity. Зберігай стиль відповідного файлу.
 - Команди в Linux/WSL після встановлення `requirements-dev.txt`: `python scripts/validate.py`, `ruff check .`, `ruff format --check .`, `mypy`, `pytest -q --cov --cov-report=term-missing`.
 - Форматування: `ruff format .`. Pre-commit необов’язковий: `pre-commit run --all-files` після встановлення.
-- Окремий Python 3.12 environment з `requirements-ha-minimum.txt` перевіряє HA 2024.6. Не змішуй old/current HA dependencies.
-- CI: `.github/workflows/validate.yml`, два HA baselines, Ruff, mypy, metadata, hassfest і HACS.
+- Runtime/CI baseline: HA 2026.10/Python 3.14 з requirements-dev.txt; HA 2024.6 більше не тестується. Заявлений мінімум HACS і Python syntax target не підвищено.
+- CI: `.github/workflows/validate.yml`, Ruff, mypy, metadata, runtime tests, hassfest і HACS.
 - Mypy не обходить HA source tree; HA APIs перевіряються runtime-тестами.
 
 ## Безпечні зміни та backward compatibility
@@ -31,7 +34,7 @@
 - `async_migrate_entry`: idempotent expand-only area=kyiv для старих записів; зберігай дані й registry identity. Старі версії підтримують лише київські записи.
 - Дні незалежні. Невідомі/невалідні/недатовані/застарілі графіки не означають «без відключень» чи off.
 - Source timezone: Europe/Kyiv. Перевіряй midnight, DST, half-hour boundaries та unavailable/recovery. Clock updates мають працювати без зміни payload.
-- Коди: 0=світло є, 1=немає всю годину, 2=перші 30 хв, 3=другі 30 хв; лише int, не bool/string. NoShutdowns приймай лише з актуальною датою й 24 нулями; emergency/невідомі коди не перетворюй на off. Інтервали [start,end), межі 0..48, кінець доби 24:00.
+- Коди в planned/Possible: 0=немає відповідного інтервалу, 1=вся година, 2=перші 30 хв, 3=другі 30 хв; лише int, не bool/string. NoShutdowns потребує актуальної дати й нульового planned, окремий Possible усе одно враховуй. Відсутній/[] Possible = нулі, null/невалідний = invalid; int 9 у будь-якому масиві на актуальну дату = emergency. Інтервали [start,end), межі 0..48, кінець доби 24:00.
 - Нові forecast keys additive: next_outage (лише майбутнє), expected_restoration/outage_duration (current-or-next). Unknown start/end/no window -> None, не нуль/північ. Відключення на початку today може починатися вчора: full duration невідома. Тривалість у хвилинах без state_class. Data status/last_successful_update залишаються доступними при API failure; це response time, не source publication.
 - State має ліміт 255 символів; усі періоди зберігай в атрибутах. Локалізований текст не є machine contract.
 - HA-managed session не закривай самостійно; blocking I/O не додавай. Зберігай first refresh до platform setup, успішний unload і timer cleanup.

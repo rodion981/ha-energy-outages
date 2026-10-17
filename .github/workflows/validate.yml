@@ -8,23 +8,13 @@ permissions:
 jobs:
   tests:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - python: "3.12"
-            fixture: "0.13.132"
-          - python: "3.14"
-            fixture: "0.13.370"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python }}
-      - run: pip install pytest-homeassistant-custom-component==${{ matrix.fixture }} ruff==0.16.10 mypy==2.4.0
-      - if: matrix.python == '3.12'
-        run: pip install -r requirements-ha-minimum.txt
-      - if: matrix.python == '3.14'
-        run: pip install --no-deps homeassistant==2026.10.0
+          python-version: "3.14"
+      - run: pip install -r requirements-dev.txt
+      - run: pip install --no-deps homeassistant==2026.10.0
       - run: ruff check .
       - run: ruff format --check .
       - run: python scripts/validate.py

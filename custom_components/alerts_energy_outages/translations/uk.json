@@ -70,21 +70,104 @@
     }
   },
   "entity": {
+    "calendar": {
+      "outage_calendar": {
+        "name": "Календар відключень",
+        "state_attributes": {
+          "outage_type": {
+            "name": "Тип відключення",
+            "state": {
+              "planned": "Планове",
+              "possible": "Можливе",
+              "mixed": "Планові й можливі",
+              "none": "Немає"
+            }
+          }
+        }
+      }
+    },
+    "event": {
+      "schedule_changed": {
+        "name": "Зміна графіка",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "schedule_changed": "Графік опубліковано або змінено"
+            }
+          }
+        }
+      }
+    },
     "sensor": {
       "today": {
-        "name": "Графік на сьогодні"
+        "name": "Графік на сьогодні",
+        "state_attributes": {
+          "outage_type": {
+            "name": "Тип відключення",
+            "state": {
+              "planned": "Планове",
+              "possible": "Можливе",
+              "mixed": "Планові й можливі",
+              "none": "Немає"
+            }
+          }
+        }
       },
       "tomorrow": {
-        "name": "Графік на завтра"
+        "name": "Графік на завтра",
+        "state_attributes": {
+          "outage_type": {
+            "name": "Тип відключення",
+            "state": {
+              "planned": "Планове",
+              "possible": "Можливе",
+              "mixed": "Планові й можливі",
+              "none": "Немає"
+            }
+          }
+        }
       },
       "next_outage": {
-        "name": "Наступне відключення"
+        "name": "Наступне відключення",
+        "state_attributes": {
+          "outage_type": {
+            "name": "Тип відключення",
+            "state": {
+              "planned": "Планове",
+              "possible": "Можливе",
+              "mixed": "Планові й можливі",
+              "none": "Немає"
+            }
+          }
+        }
       },
       "expected_restoration": {
-        "name": "Очікуване відновлення"
+        "name": "Очікуване відновлення",
+        "state_attributes": {
+          "outage_type": {
+            "name": "Тип відключення",
+            "state": {
+              "planned": "Планове",
+              "possible": "Можливе",
+              "mixed": "Планові й можливі",
+              "none": "Немає"
+            }
+          }
+        }
       },
       "outage_duration": {
-        "name": "Тривалість відключення"
+        "name": "Тривалість відключення",
+        "state_attributes": {
+          "outage_type": {
+            "name": "Тип відключення",
+            "state": {
+              "planned": "Планове",
+              "possible": "Можливе",
+              "mixed": "Планові й можливі",
+              "none": "Немає"
+            }
+          }
+        }
       },
       "data_status": {
         "name": "Статус даних",
@@ -104,7 +187,24 @@
     },
     "binary_sensor": {
       "outage_now": {
-        "name": "Відключення зараз"
+        "name": "Відключення за графіком",
+        "state_attributes": {
+          "outage_type": {
+            "name": "Тип відключення",
+            "state": {
+              "planned": "Планове",
+              "possible": "Можливе",
+              "mixed": "Планові й можливі",
+              "none": "Немає"
+            }
+          },
+          "planned_now": {
+            "name": "Планове зараз"
+          },
+          "possible_now": {
+            "name": "Можливе зараз"
+          }
+        }
       }
     }
   }

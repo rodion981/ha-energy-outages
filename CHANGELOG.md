@@ -1,5 +1,21 @@
 # Changelog
 
+## v2.5.0 (2026-10-17)
+
+### English
+- Include optional Possible intervals consistently in schedules, forecasts, binary sensor, calendar and change notifications; preserve raw source arrays and expose planned/possible classification. Validate malformed/emergency conditional data and restore both comparison arrays without replaying notifications.
+- Retire the HA 2024.6/Python 3.12 CI job and its historical test dependencies; retain current HA 2026.10/Python 3.14 validation and the existing HACS minimum.
+- Add a read-only outage calendar for published today/tomorrow periods, sharing polling and DST calculations with the existing entities; retain explicit coverage-boundary descriptions and independent day validity.
+- Add a schedule-change event with per-date publication, added/cancelled intervals and full before/after periods, using the existing regional polling.
+- Add a notification blueprint with a selectable action; suppress startup/recovery/timestamp-only repeats and retain bounded published snapshots through HA restore.
+
+### Українською
+- Можливі відключення узгоджено враховуються в графіках, прогнозах, binary sensor, календарі та сповіщеннях; сирі масиви збережені, тип інтервалу доступний окремо. Перевірка некоректних/аварійних умовних даних і відновлення обох масивів порівняння без повторних сповіщень.
+- Прибрано CI-тести HA 2024.6/Python 3.12 та їхні історичні залежності; залишено HA 2026.10/Python 3.14, мінімум HACS незмінний.
+- Календар опублікованих відключень сьогодні й завтра: спільне опитування та розрахунки DST, незалежна коректність днів і явні пояснення на межах відомого графіка.
+- Подія зміни графіка з публікацією за датою, доданими/скасованими інтервалами й повними періодами до/після; використовується наявне опитування області.
+- Шаблон сповіщень із вибором дії; захист від повторів при запуску, відновленні зв’язку та зміні лише часу оновлення, відновлення останніх опублікованих графіків засобами HA.
+
 ## v2.4.5 (2026-10-17)
 
 ### English

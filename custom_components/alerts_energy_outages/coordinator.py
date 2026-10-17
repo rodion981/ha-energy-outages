@@ -26,6 +26,7 @@ from .const import (
     SCAN_INTERVAL_SECONDS,
     SCHEDULE_TIME_ZONE,
 )
+from .schedule import normalize_day
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -85,25 +86,38 @@ def schedule_day_status(
     """Distinguish published schedules from missing, stale or invalid data."""
     if not data or not data.get("schedule_found", True):
         return "not_found"
+    today = (now or dt_util.utcnow()).astimezone(SCHEDULE_TIME_ZONE).date()
+    expected = today + timedelta(days=day == "tomorrow")
+    emergency = data.get(f"{day}Status") == "EmergencyShutdowns" or any(
+        isinstance(values, list)
+        and any(type(code) is int and code == 9 for code in values)
+        for values in (data.get(day), data.get(f"{day}Possible"))
+    )
+    if data.get(f"{day}Date") == expected.isoformat() and emergency:
+        return "emergency"
     hours = data.get(day)
     if hours is None or hours == []:
         return "unpublished"
-    if (
-        not isinstance(hours, list)
-        or len(hours) != 24
-        or any(type(value) is not int or value not in range(4) for value in hours)
-    ):
+    try:
+        normalized = normalize_day(data, day)
+    except ValueError:
         return "invalid"
-    today = (now or dt_util.utcnow()).astimezone(SCHEDULE_TIME_ZONE).date()
-    expected = today + timedelta(days=day == "tomorrow")
     if data.get(f"{day}Date") != expected.isoformat():
         return "stale"
     source_status = data.get(f"{day}Status")
     if source_status == "NoShutdowns":
-        return "published" if not any(hours) else "invalid"
+        return "published" if not any(normalized.planned) else "invalid"
     if source_status != "ScheduleApplies":
         return "unpublished"
     return "published"
+
+
+def period_attributes(hours: list[int]) -> list[dict[str, str]]:
+    """Expose complete machine-readable periods, independently of state length."""
+    return [
+        {"start": format_boundary(start), "end": format_boundary(end)}
+        for start, end in outage_periods(hours)
+    ]
 
 
 class AlertsEnergyAreaCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
