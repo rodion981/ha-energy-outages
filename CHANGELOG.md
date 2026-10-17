@@ -1,5 +1,15 @@
 # Changelog
 
+## v2.4.5 (2026-10-17)
+
+### English
+- Add an options flow for polling intervals of 1–1440 whole minutes, defaulting to 15; apply changes without restarting HA or reloading entities.
+- Keep one regional poller using the shortest requested interval among polling-enabled entries, with independent half-hour clock updates.
+
+### Українською
+- Налаштування інтервалу опитування від 1 до 1440 цілих хвилин, типово 15; зміни діють без перезапуску HA чи перезавантаження сутностей.
+- Один цикл області з найкоротшим інтервалом серед записів з увімкненим polling; незалежні оновлення на півгодинних межах.
+
 ## v2.4.3 (2026-10-13)
 
 ### English

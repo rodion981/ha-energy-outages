@@ -9,17 +9,27 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntry, ConfigFlowResult
 from homeassistant.const import CONF_NAME
+from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.selector import SelectSelector, SelectSelectorMode
+from homeassistant.helpers.selector import (
+    NumberSelector,
+    NumberSelectorMode,
+    SelectSelector,
+    SelectSelectorMode,
+)
 
 from .api import AlertsEnergyApi, AlertsEnergyApiError, Territory
 from .const import (
     CONF_AREA,
     CONF_ENTITY_UNIQUE_ID,
     CONF_OPERATOR,
+    CONF_SCAN_INTERVAL,
     DEFAULT_AREA,
     DEFAULT_QUEUE,
+    DEFAULT_SCAN_INTERVAL_MINUTES,
     DOMAIN,
+    MAX_SCAN_INTERVAL_MINUTES,
+    MIN_SCAN_INTERVAL_MINUTES,
 )
 
 SKIP_LOCALITY = "__skip__"
@@ -51,6 +61,12 @@ class AlertsEnergyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type:
         self._selection: dict[str, Any] = {}
         self._parents: list[Territory] = []
         self._queues: list[str] = []
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> AlertsEnergyOptionsFlow:
+        """Offer polling options without repeating regional setup."""
+        return AlertsEnergyOptionsFlow(config_entry)
 
     @property
     def _api(self) -> AlertsEnergyApi:
@@ -334,4 +350,53 @@ class AlertsEnergyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type:
             ),
             errors=errors,
             description_placeholders={"operator": self._selection["operator_name"]},
+        )
+
+
+class AlertsEnergyOptionsFlow(config_entries.OptionsFlow):
+    """Configure the entry's requested polling interval."""
+
+    def __init__(self, entry: ConfigEntry) -> None:
+        # Keep HA 2024.6 compatibility without assigning modern config_entry.
+        self._entry = entry
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Store whole minutes and preserve any other entry options."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            minutes = user_input.get(CONF_SCAN_INTERVAL)
+            if (
+                isinstance(minutes, (int, float))
+                and not isinstance(minutes, bool)
+                and MIN_SCAN_INTERVAL_MINUTES <= minutes <= MAX_SCAN_INTERVAL_MINUTES
+                and minutes == int(minutes)
+            ):
+                return self.async_create_entry(
+                    title="",
+                    data={**self._entry.options, CONF_SCAN_INTERVAL: int(minutes)},
+                )
+            errors[CONF_SCAN_INTERVAL] = "invalid_scan_interval"
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_SCAN_INTERVAL,
+                        default=self._entry.options.get(
+                            CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_MINUTES
+                        ),
+                    ): NumberSelector(
+                        {
+                            "min": MIN_SCAN_INTERVAL_MINUTES,
+                            "max": MAX_SCAN_INTERVAL_MINUTES,
+                            "step": 1,
+                            "mode": NumberSelectorMode.BOX,
+                            "unit_of_measurement": "min",
+                        }
+                    )
+                }
+            ),
+            errors=errors,
         )

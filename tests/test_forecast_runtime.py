@@ -9,7 +9,11 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
 from custom_components.alerts_energy_outages.api import AlertsEnergyApiError
-from custom_components.alerts_energy_outages.const import API_URL, DOMAIN
+from custom_components.alerts_energy_outages.const import (
+    API_URL,
+    CONF_SCAN_INTERVAL,
+    DOMAIN,
+)
 
 FETCH = (
     "custom_components.alerts_energy_outages.api.AlertsEnergyApi.async_get_schedules"
@@ -28,13 +32,8 @@ def entities(hass, entry):
 
 async def test_forecast_types_and_clock_transition(hass, entry, schedule, freezer):
     schedule["today"][16] = 1
-    with (
-        patch(FETCH, return_value=[schedule]) as fetch,
-        patch(
-            "custom_components.alerts_energy_outages.coordinator.SCAN_INTERVAL_SECONDS",
-            86400,
-        ),
-    ):
+    hass.config_entries.async_update_entry(entry, options={CONF_SCAN_INTERVAL: 1440})
+    with patch(FETCH, return_value=[schedule]) as fetch:
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
         ids = entities(hass, entry)
@@ -193,13 +192,8 @@ async def test_timestamp_can_trigger_a_real_ha_automation(
     hass, entry, schedule, freezer
 ):
     schedule["today"][12] = 3
-    with (
-        patch(FETCH, return_value=[schedule]),
-        patch(
-            "custom_components.alerts_energy_outages.coordinator.SCAN_INTERVAL_SECONDS",
-            86400,
-        ),
-    ):
+    hass.config_entries.async_update_entry(entry, options={CONF_SCAN_INTERVAL: 1440})
+    with patch(FETCH, return_value=[schedule]):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
         ids = entities(hass, entry)
