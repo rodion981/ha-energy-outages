@@ -170,11 +170,12 @@ async def test_unknown_end_is_explicit_and_forecast_stays_unknown(
 async def test_failure_recovery_and_schedule_replacement(hass, entry, schedule):
     with patch(FETCH, return_value=[schedule]) as fetch:
         coordinator, calendar = await setup(hass, entry)
+        previous = await calendar.async_get_events(hass, RANGE_START, RANGE_END)
         fetch.side_effect = AlertsEnergyApiError("offline")
         await coordinator.async_refresh()
-        assert hass.states.get(calendar.entity_id).state == "unavailable"
-        with pytest.raises(HomeAssistantError):
-            await calendar.async_get_events(hass, RANGE_START, RANGE_END)
+        assert hass.states.get(calendar.entity_id).state == "on"
+        assert hass.states.get(calendar.entity_id).attributes["data_is_cached"]
+        assert await calendar.async_get_events(hass, RANGE_START, RANGE_END) == previous
         fetch.side_effect = None
         changed = deepcopy(schedule)
         changed["today"] = [0] * 24
@@ -200,6 +201,8 @@ async def test_zero_day_is_available_and_tomorrow_can_stand_alone(
         fetch.return_value = []
         await coordinator.async_refresh()
         assert not calendar.available
+        with pytest.raises(HomeAssistantError):
+            await calendar.async_get_events(hass, RANGE_START, RANGE_END)
 
 
 async def test_localized_descriptions_and_clock_only_transitions(

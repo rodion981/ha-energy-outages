@@ -60,9 +60,9 @@ class AlertsEnergyOutageNow(
 
     @property
     def available(self) -> bool:
-        """Require a successful update and a published schedule for today."""
+        """Require a published dated schedule, including retained API data."""
         return (
-            super().available
+            self.coordinator.data is not None
             and schedule_day_status(self.coordinator.data, "today") == "published"
         )
 
@@ -83,6 +83,7 @@ class AlertsEnergyOutageNow(
         schedule = normalize_day(self.coordinator.data, "today")
         half_code = 2 if boundary % 2 == 0 else 3
         return {
+            "data_is_cached": self.coordinator.data_is_cached,
             "outage_type": schedule.slot_type(boundary),
             "planned_now": schedule.planned[boundary // 2] in (1, half_code),
             "possible_now": schedule.possible[boundary // 2] in (1, half_code),

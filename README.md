@@ -86,7 +86,7 @@ Add the entities to an **Entities** card. For notifications, use **Next outage**
 
 ## Reading the data
 
-- **`unavailable`:** the relevant schedule is missing, invalid, undated, stale or unpublished, or its API update failed. Today and tomorrow are checked independently.
+- **`unavailable`:** the relevant schedule is missing, invalid, undated, stale or unpublished. Today and tomorrow are checked independently. A failed API refresh alone does not hide a previously received schedule that is still valid for its date.
 - **`unknown`:** a forecast entity has no matching event in published coverage, or its required boundary is unknown. This does not mean a zero-minute outage.
 - **Midnight:** an outage ending at `24:00` in today's display may continue tomorrow. Restoration and full duration stay unknown until published coverage confirms an end. Continuous outages merge across midnight when both days are published.
 - **Unknown start:** an outage already ongoing at the beginning of today's coverage may have started yesterday. Its full duration is unknown, but a published restoration remains available.
@@ -131,7 +131,7 @@ Each queue automatically gets an **Outage calendar** entity on its existing devi
 
 Published intervals for today and tomorrow refresh with the configured regional poller, without additional requests. Cancelled/replaced periods disappear on the next successful refresh. Events use Europe/Kyiv source dates and are displayed in Home Assistant's timezone; continuous intervals merge across midnight when both days are published. Daylight saving changes use actual UTC intervals.
 
-The calendar contains the available published dates, not history or a long-term forecast. A missing, stale, invalid or emergency day contributes no confirmed events, while the other published day remains visible. Empty dates outside that coverage do not mean there will be no outages. The calendar becomes unavailable on API failure or when neither day is published; `today_schedule_status` and `tomorrow_schedule_status` explain partial coverage.
+The calendar contains the available published dates, not history or a long-term forecast. A missing, stale, invalid or emergency day contributes no confirmed events, while the other published day remains visible. Empty dates outside that coverage do not mean there will be no outages. A failed API refresh retains previously received events whose schedule dates are still valid; the calendar becomes unavailable when neither day is published. `today_schedule_status` and `tomorrow_schedule_status` explain partial coverage.
 
 An event touching the edge of published coverage is displayed only up to that boundary, with an explanation in its description. `event_start_known` and `event_end_known` describe the current/next event's actual boundary knowledge. Calendar event end can mean the published graph ends, rather than power restoration. Use **Expected restoration** for restoration notifications and **Schedule change** for graph revisions. Calendar automation triggers follow Home Assistant's calendar refresh cycle and may retain a previously queued event until that cycle refreshes.
 
@@ -150,6 +150,10 @@ The same codes apply to `todayPossible`/`tomorrowPossible`. An absent field or `
 Entries in the same region share one poller and clock listener. Removing one entry keeps the others working; removing the last releases the region's resources. Source coverage and publication depend on Alerts Energy, and its API may change.
 
 Set the interval under **Settings → Devices & services → Alerts Energy Outages → Configure** for the relevant entry: **1–1440 whole minutes**, default **15**. It applies without restarting HA or reloading entities. The shared regional poller uses the shortest interval among entries with polling enabled; entries with polling disabled do not shorten it. Half-hour schedule transitions continue to update independently of API polling.
+
+After a failed request, the regional poller retries once per minute until a request succeeds, then resumes the configured interval. Disabling polling also disables these retries. The last received schedule remains usable only while its day/date and publication status are valid; a new missing, invalid or emergency response is never replaced with an older published schedule. This cache is in memory and does not provide offline startup after a Home Assistant restart.
+
+Schedule/forecast sensors, the binary sensor and calendar expose **`data_is_cached: true`** while using a retained response after a failed refresh. **Data status** continues to report the actual error (`connection_error` or `invalid`), exposes the same flag and keeps the per-day statuses; **Last successful API update** retains its previous timestamp. A cached schedule may miss subsequent source corrections. Dashboards can display it with an update warning instead of hiding it solely because Data status reports a request error. Cached clock transitions and calculations continue, but dates are never extended or silently moved to another day. Recovery with unchanged periods does not produce a schedule-change notification.
 
 Update through HACS and restart Home Assistant. Configured entries and their entity identities are retained.
 

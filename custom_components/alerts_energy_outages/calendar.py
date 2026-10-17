@@ -100,7 +100,7 @@ class AlertsEnergyCalendar(CoordinatorEntity[AlertsEnergyCoordinator], CalendarE
 
     @property
     def available(self) -> bool:
-        return super().available and any(
+        return self.coordinator.data is not None and any(
             schedule_day_status(self.coordinator.data, day) == "published"
             for day in ("today", "tomorrow")
         )
@@ -182,6 +182,7 @@ class AlertsEnergyCalendar(CoordinatorEntity[AlertsEnergyCoordinator], CalendarE
     def extra_state_attributes(self) -> dict[str, Any]:
         period = self._upcoming_period
         return {
+            "data_is_cached": self.coordinator.data_is_cached,
             "today_schedule_status": schedule_day_status(
                 self.coordinator.data, "today"
             ),
