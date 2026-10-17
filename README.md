@@ -16,7 +16,7 @@ Ukrainian power outage schedules from [Alerts Energy](https://alerts.energy/) di
 - An **Outage now** binary sensor for the current scheduled outage.
 - **Next outage**, **Expected restoration** and **Outage duration** for dashboards and automations.
 - **Data status** and **Last successful API update**, visible during source failures.
-- One shared API poll every 15 minutes per active region, including when several queues are configured.
+- Configurable polling interval, defaulting to 15 minutes, with one shared API request per active region.
 - English and Ukrainian entity names and status labels.
 
 > [!NOTE]
@@ -115,6 +115,8 @@ https://alerts.energy/api/v1/source-registry/areas/{area}/shutdowns
 It selects the exact operator/queue record and interprets each hourly code as two half-hour slots: `0` = no planned outage, `1` = outage for the whole hour, `2` = first half, `3` = second half. Adjacent slots form continuous periods.
 
 Entries in the same region share one poller and clock listener. Removing one entry keeps the others working; removing the last releases the region's resources. Source coverage and publication depend on Alerts Energy, and its API may change.
+
+Set the interval under **Settings → Devices & services → Alerts Energy Outages → Configure** for the relevant entry: **1–1440 whole minutes**, default **15**. It applies without restarting HA or reloading entities. The shared regional poller uses the shortest interval among entries with polling enabled; entries with polling disabled do not shorten it. Half-hour schedule transitions continue to update independently of API polling.
 
 Update through HACS and restart Home Assistant. Configured entries and their entity identities are retained.
 

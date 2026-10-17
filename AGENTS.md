@@ -7,7 +7,7 @@
 - `config_flow.py`: область → район/громада/населений пункт → оператор → черга; retry/back, duplicate protection, atomic reconfigure зі збереженням entity identity.
 - `api.py`: HA-managed aiohttp session; публічні GET /atus, /atus/{katottg}, /source-registry/areas/{area}/{suppliers,shutdowns}; Territory validation. Міський довідник не визначає чергу або оператора за адресою.
 - `__init__.py`: first refresh, platform setup/unload, entry adapters у `hass.data`, shared area pool у DATA_AREAS; ref-counted acquire/release та cleanup на setup failure/unload.
-- `coordinator.py`: area coordinator poll 60 с + один half-hour clock; entry adapters без окремого poll, shared health/last success, day validity. Не прив’язуй shared source до першого ConfigEntry; зберігай pref_disable_polling.
+- `coordinator.py`: один area poller (типово 15 хв) + half-hour clock; найкоротший scan_interval у хвилинах серед активних entry contexts з увімкненим polling. Options flow: 1..1440 цілих хв; update listener переплановує без reload. Не прив’язуй shared source до першого ConfigEntry; зберігай pref_disable_polling та cleanup listener на unload.
 - `forecast.py`: UTC half-hour timeline із Kyiv wall codes, DST, поточний/наступний період, невідомий кінець на краю published horizon.
 - `sensor.py`, `binary_sensor.py`: незалежна availability днів і поточне планове відключення; entity properties без I/O.
 - `diagnostics.py`: allowlist health/public metadata; `strings.json`, `translations/en.json`, `translations/uk.json`: UI.

@@ -45,7 +45,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         else:
             await async_release_area(hass, source)
         raise
+    entry.async_on_unload(entry.add_update_listener(_async_update_options))
     return True
+
+
+async def _async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reschedule shared polling in place, without reloading entities."""
+    if coordinator := hass.data.get(DOMAIN, {}).get(entry.entry_id):
+        coordinator.source.async_update_polling_schedule()
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

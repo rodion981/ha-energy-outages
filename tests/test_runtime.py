@@ -8,7 +8,11 @@ from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
 from custom_components.alerts_energy_outages.api import AlertsEnergyApiError
-from custom_components.alerts_energy_outages.const import DEFAULT_OPERATOR, DOMAIN
+from custom_components.alerts_energy_outages.const import (
+    CONF_SCAN_INTERVAL,
+    DEFAULT_OPERATOR,
+    DOMAIN,
+)
 from custom_components.alerts_energy_outages.diagnostics import (
     async_get_config_entry_diagnostics,
 )
@@ -107,13 +111,8 @@ async def test_first_refresh_retry(hass, entry):
 
 
 async def test_clock_boundary_without_network(hass, entry, schedule, freezer):
-    with (
-        patch(FETCH, return_value=[schedule]) as fetch,
-        patch(
-            "custom_components.alerts_energy_outages.coordinator.SCAN_INTERVAL_SECONDS",
-            3600,
-        ),
-    ):
+    hass.config_entries.async_update_entry(entry, options={CONF_SCAN_INTERVAL: 60})
+    with patch(FETCH, return_value=[schedule]) as fetch:
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
         ids = entity_ids(hass, entry)

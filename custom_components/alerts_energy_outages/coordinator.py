@@ -18,8 +18,10 @@ from homeassistant.util import dt as dt_util
 from .api import AlertsEnergyApi, AlertsEnergyApiError
 from .const import (
     CONF_OPERATOR,
+    CONF_SCAN_INTERVAL,
     DATA_AREAS,
     DEFAULT_OPERATOR,
+    DEFAULT_SCAN_INTERVAL_MINUTES,
     DOMAIN,
     SCAN_INTERVAL_SECONDS,
     SCHEDULE_TIME_ZONE,
@@ -145,7 +147,17 @@ class AlertsEnergyAreaCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
 
     @callback
     def async_update_polling_schedule(self) -> None:
-        """Reconsider polling after adding or removing an entry subscriber."""
+        """Use the shortest interval requested by polling-enabled entries."""
+        self.update_interval = timedelta(
+            minutes=min(
+                (
+                    entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_MINUTES)
+                    for entry in self.async_contexts()
+                    if not entry.pref_disable_polling
+                ),
+                default=DEFAULT_SCAN_INTERVAL_MINUTES,
+            )
+        )
         self._async_unsub_refresh()
         if not self._shutdown_requested:
             self._schedule_refresh()
