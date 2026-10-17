@@ -74,10 +74,11 @@ async def test_transport_failure_recovery(hass, entry, schedule):
         await hass.async_block_till_done()
         ids = entity_ids(hass, entry)
         coordinator = hass.data[DOMAIN][entry.entry_id]
+        previous = {key: hass.states.get(item).state for key, item in ids.items()}
         fetch.side_effect = AlertsEnergyApiError("offline")
         await coordinator.async_refresh()
         assert all(
-            hass.states.get(item).state == "unavailable"
+            hass.states.get(item).state == previous[key]
             for key, item in ids.items()
             if key not in {"status", "update", "changed"}
         )
@@ -196,6 +197,7 @@ async def test_diagnostics_allowlist(hass, entry, schedule):
         "data_status",
         "last_successful_update",
         "last_update_success",
+        "data_is_cached",
         "operator",
         "queue",
         "days",

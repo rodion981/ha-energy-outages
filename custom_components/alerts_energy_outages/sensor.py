@@ -139,6 +139,7 @@ class AlertsEnergySensorBase(
     """Retain the same entry/device identity for old and additive sensor keys."""
 
     entity_description: SensorEntityDescription
+
     _attr_has_entity_name = True
 
     def __init__(
@@ -159,6 +160,11 @@ class AlertsEnergySensorBase(
             "manufacturer": "Alerts Energy",
             "configuration_url": f"{SITE_URL}/{quote(coordinator.area, safe='')}",
         }
+
+    @property
+    def available(self) -> bool:
+        """Keep retained data usable; subclasses still validate published dates."""
+        return self.coordinator.data is not None
 
 
 class AlertsEnergySensor(AlertsEnergySensorBase):
@@ -207,6 +213,7 @@ class AlertsEnergySensor(AlertsEnergySensorBase):
             normalize_day(self.coordinator.data, day) if status == "published" else None
         )
         return {
+            "data_is_cached": self.coordinator.data_is_cached,
             "area": self.coordinator.area,
             "queue": self.coordinator.data["queue"],
             "operator": self.coordinator.data["initiator"],
@@ -258,6 +265,7 @@ class AlertsEnergyForecastSensor(AlertsEnergySensorBase):
         is_next = self.entity_description.key == "next_outage"
         window = forecast.next_outage if is_next else forecast.selected
         return {
+            "data_is_cached": self.coordinator.data_is_cached,
             "area": self.coordinator.area,
             "operator": self.coordinator.data["initiator"],
             "queue": self.coordinator.data["queue"],
@@ -306,6 +314,7 @@ class AlertsEnergyInformationSensor(AlertsEnergySensorBase):
             return None
         data = self.coordinator.data
         return {
+            "data_is_cached": self.coordinator.data_is_cached,
             "today_schedule_status": schedule_day_status(data, "today"),
             "tomorrow_schedule_status": schedule_day_status(data, "tomorrow"),
             "today_source_status": data.get("todayStatus"),

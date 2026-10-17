@@ -23,6 +23,7 @@ from .const import (
     DEFAULT_OPERATOR,
     DEFAULT_SCAN_INTERVAL_MINUTES,
     DOMAIN,
+    RETRY_INTERVAL_SECONDS,
     SCAN_INTERVAL_SECONDS,
     SCHEDULE_TIME_ZONE,
 )
@@ -144,6 +145,7 @@ class AlertsEnergyAreaCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
         self._api = api
         self.area = area
         self.users = 0
+        self._configured_update_interval = timedelta(seconds=SCAN_INTERVAL_SECONDS)
         self.last_successful_update: datetime | None = None
         self._initial_lock = asyncio.Lock()
         self._unsub_clock: Callable[[], None] | None = async_track_utc_time_change(
@@ -157,12 +159,20 @@ class AlertsEnergyAreaCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
     def _schedule_refresh(self) -> None:
         """Keep the existing disable-polling preference for the shared source."""
         if any(not entry.pref_disable_polling for entry in self.async_contexts()):
+            self.update_interval = (
+                self._configured_update_interval
+                if self.last_update_success
+                else min(
+                    self._configured_update_interval,
+                    timedelta(seconds=RETRY_INTERVAL_SECONDS),
+                )
+            )
             super()._schedule_refresh()
 
     @callback
     def async_update_polling_schedule(self) -> None:
         """Use the shortest interval requested by polling-enabled entries."""
-        self.update_interval = timedelta(
+        self._configured_update_interval = timedelta(
             minutes=min(
                 (
                     entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_MINUTES)
@@ -172,6 +182,7 @@ class AlertsEnergyAreaCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
                 default=DEFAULT_SCAN_INTERVAL_MINUTES,
             )
         )
+        self.update_interval = self._configured_update_interval
         self._async_unsub_refresh()
         if not self._shutdown_requested:
             self._schedule_refresh()
@@ -255,6 +266,11 @@ class AlertsEnergyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @property
     def last_successful_update(self) -> datetime | None:
         return self.source.last_successful_update
+
+    @property
+    def data_is_cached(self) -> bool:
+        """Distinguish a retained response from a successful current update."""
+        return self.source.data is not None and not self.last_update_success
 
     @property
     def data_status(self) -> str:

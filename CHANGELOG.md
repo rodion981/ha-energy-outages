@@ -1,5 +1,15 @@
 # Changelog
 
+## v2.5.1 (2026-10-18)
+
+### English
+- Keep dated, published schedules, forecasts, binary state and calendar available during failed API refreshes, with an explicit `data_is_cached` flag and truthful error/last-success diagnostics. Never reuse an older schedule after a new missing, invalid or emergency response, or extend its dates.
+- Retry failed regional requests once per minute, then restore the configured shared polling interval after recovery; preserve disabled polling and final-unload cleanup.
+
+### Українською
+- При збої оновлення API датовані опубліковані графіки, прогнози, binary sensor і календар залишаються доступними з явним `data_is_cached`; помилка й час останнього успішного отримання залишаються чесними. Старий графік не підміняє нову відсутню, некоректну чи аварійну відповідь, дати не подовжуються.
+- Повторні спроби запитів області раз на хвилину до відновлення, після чого повертається налаштований спільний інтервал; вимкнення polling і cleanup останнього запису збережені.
+
 ## v2.5.0 (2026-10-17)
 
 ### English

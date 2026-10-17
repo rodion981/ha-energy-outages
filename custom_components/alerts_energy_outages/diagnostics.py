@@ -27,6 +27,7 @@ async def async_get_config_entry_diagnostics(
             else None
         ),
         "last_update_success": coordinator.last_update_success,
+        "data_is_cached": coordinator.data_is_cached,
         "operator": entry.data["operator"],
         "queue": entry.data["queue"],
         "days": {

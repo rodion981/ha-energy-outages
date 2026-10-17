@@ -166,7 +166,10 @@ async def test_last_success_is_preserved_on_failure_then_recovers(
         await hass.data[DOMAIN][entry.entry_id].async_refresh()
         assert hass.states.get(ids["data_status"]).state == "connection_error"
         assert hass.states.get(ids["last_successful_update"]).state == stamp
-        assert hass.states.get(ids["expected_restoration"]).state == "unavailable"
+        assert datetime.fromisoformat(
+            hass.states.get(ids["expected_restoration"]).state
+        ) == datetime(2026, 10, 7, 9, 30, tzinfo=UTC)
+        assert hass.states.get(ids["expected_restoration"]).attributes["data_is_cached"]
         fetch.side_effect = None
         freezer.move_to(datetime(2026, 10, 7, 9, 1, tzinfo=UTC))
         await hass.data[DOMAIN][entry.entry_id].async_refresh()
@@ -188,12 +191,13 @@ async def test_invalid_api_payload_is_not_reported_as_network_error(
     assert hass.states.get(ids["data_status"]).state == "invalid"
 
 
+@pytest.mark.parametrize("api_offline", [False, True])
 async def test_timestamp_can_trigger_a_real_ha_automation(
-    hass, entry, schedule, freezer
+    hass, entry, schedule, freezer, api_offline
 ):
     schedule["today"][12] = 3
     hass.config_entries.async_update_entry(entry, options={CONF_SCAN_INTERVAL: 1440})
-    with patch(FETCH, return_value=[schedule]):
+    with patch(FETCH, return_value=[schedule]) as fetch:
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
         ids = entities(hass, entry)
@@ -220,6 +224,10 @@ async def test_timestamp_can_trigger_a_real_ha_automation(
         freezer.move_to(initial)
         async_fire_time_changed(hass, initial)
         await hass.async_block_till_done()
+        if api_offline:
+            fetch.side_effect = AlertsEnergyApiError("offline")
+            await hass.data[DOMAIN][entry.entry_id].async_refresh()
+            assert hass.states.get(ids["next_outage"]).attributes["data_is_cached"]
         boundary = datetime(2026, 10, 7, 9, 30, 1, tzinfo=UTC)
         freezer.move_to(boundary)
         # The HA test helper iterates a heap, not deadline order. Real asyncio
@@ -230,3 +238,5 @@ async def test_timestamp_can_trigger_a_real_ha_automation(
         await hass.async_block_till_done()
         assert len(events) == 1
         assert hass.states.get(ids["outage_now"]).state == "on"
+        if api_offline:
+            assert hass.states.get(ids["data_status"]).state == "connection_error"
