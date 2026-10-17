@@ -9,5 +9,5 @@
   "integration_type": "service",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/rodion981/ha-energy-outages/issues",
-  "version": "2.4.4"
+  "version": "2.4.5"
 }

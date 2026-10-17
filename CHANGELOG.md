@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v2.4.5 (2026-10-17)
 
 ### English
 - Add an options flow for polling intervals of 1–1440 whole minutes, defaulting to 15; apply changes without restarting HA or reloading entities.
