@@ -37,7 +37,7 @@ async def test_forecast_types_and_clock_transition(hass, entry, schedule, freeze
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
         ids = entities(hass, entry)
-        assert len(ids) == 8
+        assert len(ids) == 10
         next_state = hass.states.get(ids["next_outage"])
         assert next_state.attributes["device_class"] == "timestamp"
         assert datetime.fromisoformat(next_state.state) == datetime(
@@ -118,7 +118,7 @@ async def test_unpublished_start_keeps_restoration_but_not_full_duration(
     [
         ({"today": []}, "unpublished"),
         ({"todayDate": "2026-10-06"}, "stale"),
-        ({"today": [9] * 24}, "invalid"),
+        ({"today": [8] * 24}, "invalid"),
         ({"today": [9] * 24, "todayStatus": "EmergencyShutdowns"}, "emergency"),
     ],
 )

@@ -1,4 +1,4 @@
-# Current HA fixture baseline; CI additionally tests the declared minimum.
+# Automated baseline: HA 2026.10 / Python 3.14.
 pytest-homeassistant-custom-component==0.13.370
 ruff==0.16.10
 mypy==2.4.0

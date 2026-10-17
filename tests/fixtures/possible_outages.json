@@ -1,0 +1,30 @@
+{
+  "captured_date": "2026-10-17",
+  "source": "https://alerts.energy/api/v1/source-registry/areas/{area}/shutdowns",
+  "examples": [
+    {
+      "area": "zakarpatska-oblast", "operator": "zakarpatska_oblast_oblenergo", "queue": "1.1", "day": "today", "date": "2026-10-17", "status": "ScheduleApplies",
+      "planned": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      "possible": [0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0],
+      "expected_periods": [{"start":"10:00","end":"12:00"},{"start":"18:00","end":"20:00"}]
+    },
+    {
+      "area": "mikolayivska-oblast", "operator": "mikolayivska_oblast_oblenergo", "queue": "1.1", "day": "today", "date": "2026-10-17", "status": "ScheduleApplies",
+      "planned": [0,0,0,0,0,0,0,0,0,0,3,1,2,0,0,0,0,0,0,0,0,0,0,0],
+      "possible": [0,0,0,0,0,0,0,0,0,0,2,0,3,0,0,0,0,0,0,0,0,0,0,0],
+      "expected_periods": [{"start":"10:00","end":"13:00"}]
+    },
+    {
+      "area": "kharkivska-oblast", "operator": "kharkivska_oblast_oblenergo", "queue": "1.1", "day": "today", "date": "2026-10-17", "status": "ScheduleApplies",
+      "planned": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      "possible": [0,0,0,0,0,0,0,1,1,1,2,0,0,0,0,0,0,3,1,1,1,0,0,0],
+      "expected_periods": [{"start":"07:00","end":"10:30"},{"start":"17:30","end":"21:00"}]
+    },
+    {
+      "area": "cherkaska-oblast", "operator": "cherkaska_oblast_uz", "queue": "1.1", "day": "tomorrow", "date": "2026-10-18", "status": "ScheduleApplies",
+      "planned": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      "possible": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,1,1,0,0],
+      "expected_periods": [{"start":"14:00","end":"17:00"},{"start":"20:00","end":"22:00"}]
+    }
+  ]
+}

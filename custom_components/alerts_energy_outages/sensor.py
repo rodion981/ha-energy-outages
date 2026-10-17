@@ -25,9 +25,11 @@ from .coordinator import (
     AlertsEnergyCoordinator,
     format_periods,
     outage_periods,
+    period_attributes,
     schedule_day_status,
 )
 from .forecast import ScheduleForecast, schedule_forecast
+from .schedule import normalize_day
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -43,7 +45,7 @@ DESCRIPTIONS = (
         translation_key="today",
         icon="mdi:calendar-today",
         value_fn=lambda data, label: format_periods(
-            outage_periods(data["today"]), label
+            outage_periods(normalize_day(data, "today").combined), label
         ),
     ),
     AlertsEnergySensorDescription(
@@ -51,7 +53,7 @@ DESCRIPTIONS = (
         translation_key="tomorrow",
         icon="mdi:calendar-clock",
         value_fn=lambda data, label: format_periods(
-            outage_periods(data["tomorrow"]), label
+            outage_periods(normalize_day(data, "tomorrow").combined), label
         ),
     ),
 )
@@ -181,7 +183,19 @@ class AlertsEnergySensor(AlertsEnergySensorBase):
         no_outages = (
             "Без відключень" if self.hass.config.language == "uk" else "No outages"
         )
-        return self.entity_description.value_fn(self.coordinator.data, no_outages)
+        result = self.entity_description.value_fn(self.coordinator.data, no_outages)
+        kind = normalize_day(
+            self.coordinator.data, self.entity_description.key
+        ).outage_type
+        uk = self.hass.config.language == "uk"
+        if kind in {"possible", "mixed"}:
+            prefix = (
+                ("Можливі" if kind == "possible" else "Планові й можливі")
+                if uk
+                else ("Possible" if kind == "possible" else "Planned and possible")
+            )
+            result = f"{prefix}: {result}"
+        return result if len(result) <= 255 else result[:254] + "…"
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -189,8 +203,8 @@ class AlertsEnergySensor(AlertsEnergySensorBase):
         day = self.entity_description.key
         hours = self.coordinator.data.get(day)
         status = schedule_day_status(self.coordinator.data, day)
-        periods = (
-            outage_periods(self.coordinator.data[day]) if status == "published" else []
+        schedule = (
+            normalize_day(self.coordinator.data, day) if status == "published" else None
         )
         return {
             "area": self.coordinator.area,
@@ -198,16 +212,16 @@ class AlertsEnergySensor(AlertsEnergySensorBase):
             "operator": self.coordinator.data["initiator"],
             "updated": self.coordinator.data.get("updated"),
             "hours": hours,
+            "possible_hours": self.coordinator.data.get(f"{day}Possible"),
             "date": self.coordinator.data.get(f"{day}Date"),
             "source_status": self.coordinator.data.get(f"{day}Status"),
             "schedule_status": status,
-            "periods": [
-                {
-                    "start": f"{start // 2:02d}:{(start % 2) * 30:02d}",
-                    "end": f"{end // 2:02d}:{(end % 2) * 30:02d}",
-                }
-                for start, end in periods
-            ],
+            "periods": period_attributes(schedule.combined) if schedule else [],
+            "planned_periods": period_attributes(schedule.planned) if schedule else [],
+            "possible_periods": period_attributes(schedule.possible)
+            if schedule
+            else [],
+            "outage_type": schedule.outage_type if schedule else None,
         }
 
 
@@ -250,6 +264,7 @@ class AlertsEnergyForecastSensor(AlertsEnergySensorBase):
             "outage_context": ("next" if window else "none")
             if is_next
             else forecast.context,
+            "outage_type": window.outage_type if window else None,
             "outage_start": window.start.isoformat()
             if window and window.start_known
             else None,

@@ -69,10 +69,17 @@ def test_unknown_or_stale_date(schedule):
     assert schedule_day_status(schedule, "today") == "stale"
 
 
-@pytest.mark.parametrize("status", ["EmergencyShutdowns", "Unknown", None])
-def test_unknown_source_status(schedule, status):
+@pytest.mark.parametrize(
+    ("status", "expected"),
+    [
+        ("EmergencyShutdowns", "emergency"),
+        ("Unknown", "unpublished"),
+        (None, "unpublished"),
+    ],
+)
+def test_nonpublished_source_status(schedule, status, expected):
     schedule["todayStatus"] = status
-    assert schedule_day_status(schedule, "today") == "unpublished"
+    assert schedule_day_status(schedule, "today") == expected
 
 
 def test_midnight_and_source_timezone(schedule, freezer):

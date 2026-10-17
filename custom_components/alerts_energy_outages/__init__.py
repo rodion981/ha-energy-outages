@@ -11,7 +11,7 @@ from .api import AlertsEnergyApi
 from .const import CONF_AREA, DEFAULT_AREA, DOMAIN
 from .coordinator import AlertsEnergyCoordinator, async_acquire_area, async_release_area
 
-PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR]
+PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.EVENT, Platform.CALENDAR]
 
 
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

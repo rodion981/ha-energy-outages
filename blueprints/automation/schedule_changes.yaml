@@ -1,0 +1,61 @@
+blueprint:
+  name: "Alerts Energy: сповіщення про зміну графіка"
+  description: >-
+    Сповіщає про публікацію або зміну графіка сьогодні чи завтра.
+    Виберіть сутність «Зміна графіка» своєї черги.
+    Типово створює сповіщення в Home Assistant. Для телефона чи іншого
+    каналу виберіть відповідну дію та вкажіть у її полі повідомлення
+    {{ notification_message }}. Заголовок доступний як {{ notification_title }}.
+  domain: automation
+  input:
+    schedule_event:
+      name: Зміна графіка
+      selector:
+        entity:
+          domain: event
+          integration: alerts_energy_outages
+    notification_actions:
+      name: Дії сповіщення
+      description: "Текст повідомлення: {{ notification_message }}"
+      default:
+        - service: persistent_notification.create
+          data:
+            title: "{{ notification_title }}"
+            message: "{{ notification_message }}"
+            notification_id: "alerts_energy_outages_{{ trigger.entity_id }}"
+      selector:
+        action: {}
+
+mode: queued
+max: 10
+trigger:
+  - platform: state
+    entity_id: !input schedule_event
+condition:
+  - condition: template
+    value_template: >-
+      {{ trigger.from_state is not none and trigger.to_state is not none
+         and trigger.from_state.state != 'unavailable'
+         and not trigger.from_state.attributes.get('restored', false)
+         and trigger.to_state.state not in ['unknown', 'unavailable']
+         and (trigger.to_state.state != trigger.from_state.state
+              or trigger.to_state.attributes.get('changes') != trigger.from_state.attributes.get('changes'))
+         and trigger.to_state.attributes.get('event_type') == 'schedule_changed' }}
+action:
+  - variables:
+      notification_title: Графік відключень оновлено
+      notification_message: |-
+        {% set data = trigger.to_state.attributes -%}
+        Черга {{ data.queue }} · {{ data.area }} · {{ data.operator }}
+        {% for change in data.changes %}
+        {{ change.date }}: {{ 'Опубліковано графік' if change.change_type == 'published' else 'Змінено графік' }}.
+        {% if change.get('classification_changed', false) %}Уточнено тип інтервалів без зміни загальних годин.
+        {% endif %}{% if change.get('possible') %}Можливі відключення: {% for p in change.possible %}{{ p.start }}–{{ p.end }}{{ '; ' if not loop.last else '' }}{% endfor %} (застосування не гарантоване).
+        {% endif %}{% if change.get('planned') %}Планові відключення: {% for p in change.planned %}{{ p.start }}–{{ p.end }}{{ '; ' if not loop.last else '' }}{% endfor %}.
+        {% endif %}
+        {% if change.added %}Додано: {% for p in change.added %}{{ p.start }}–{{ p.end }}{{ '; ' if not loop.last else '' }}{% endfor %}.
+        {% endif %}{% if change.removed %}Скасовано: {% for p in change.removed %}{{ p.start }}–{{ p.end }}{{ '; ' if not loop.last else '' }}{% endfor %}.
+        {% endif %}Графік для планування: {% for p in change.after %}{{ p.start }}–{{ p.end }}{{ '; ' if not loop.last else '' }}{% else %}без відключень за графіком{% endfor %}.
+        {% endfor %}
+  - choose: []
+    default: !input notification_actions

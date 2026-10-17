@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import Any
 from urllib.parse import quote
 
 from homeassistant.components.binary_sensor import (
@@ -15,7 +16,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
 from .const import CONF_ENTITY_UNIQUE_ID, DOMAIN, SCHEDULE_TIME_ZONE, SITE_URL
-from .coordinator import AlertsEnergyCoordinator, outage_periods, schedule_day_status
+from .coordinator import AlertsEnergyCoordinator, schedule_day_status
+from .schedule import normalize_day
 
 
 async def async_setup_entry(
@@ -69,9 +71,19 @@ class AlertsEnergyOutageNow(
         """Return true when the current half hour is an outage."""
         if not self.available:
             return None
+        return self.extra_state_attributes["outage_type"] != "none"
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Distinguish conditional intervals from planned ones without I/O."""
+        if not self.available:
+            return {"outage_type": None, "planned_now": None, "possible_now": None}
         now = dt_util.utcnow().astimezone(SCHEDULE_TIME_ZONE)
-        boundary = now.hour * 2 + (1 if now.minute >= 30 else 0)
-        return any(
-            start <= boundary < end
-            for start, end in outage_periods(self.coordinator.data["today"])
-        )
+        boundary = now.hour * 2 + now.minute // 30
+        schedule = normalize_day(self.coordinator.data, "today")
+        half_code = 2 if boundary % 2 == 0 else 3
+        return {
+            "outage_type": schedule.slot_type(boundary),
+            "planned_now": schedule.planned[boundary // 2] in (1, half_code),
+            "possible_now": schedule.possible[boundary // 2] in (1, half_code),
+        }

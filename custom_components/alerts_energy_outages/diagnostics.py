@@ -9,6 +9,7 @@ from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 from .coordinator import AlertsEnergyCoordinator, schedule_day_status
+from .schedule import normalize_day
 
 
 async def async_get_config_entry_diagnostics(
@@ -33,6 +34,9 @@ async def async_get_config_entry_diagnostics(
                 "status": schedule_day_status(data, day),
                 "date": data.get(f"{day}Date"),
                 "source_status": data.get(f"{day}Status"),
+                "outage_type": normalize_day(data, day).outage_type
+                if schedule_day_status(data, day) == "published"
+                else None,
             }
             for day in ("today", "tomorrow")
         },
