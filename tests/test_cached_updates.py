@@ -133,7 +133,14 @@ async def test_cached_clock_updates_and_date_expiry_with_polling_disabled(
         async_fire_time_changed(hass, midnight)
         await hass.async_block_till_done()
         for key, entity in ids.items():
-            if key not in {"data_status", "last_successful_update", "schedule_changed"}:
+            if key not in {
+                "data_status",
+                "last_successful_update",
+                "schedule_changed",
+                "today_checked_at",
+                "tomorrow_checked_at",
+                "emergency_notices",
+            }:
                 assert hass.states.get(entity).state == "unavailable"
         assert fetch.call_count == 2
 

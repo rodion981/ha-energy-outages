@@ -30,6 +30,7 @@ from .coordinator import (
 )
 from .forecast import ScheduleForecast, schedule_forecast
 from .schedule import normalize_day
+from .source import source_checked_at
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -103,6 +104,16 @@ INFORMATION_DESCRIPTIONS = (
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
         icon="mdi:update",
+    ),
+    *(
+        SensorEntityDescription(
+            key=f"{day}_checked_at",
+            translation_key=f"{day}_checked_at",
+            device_class=SensorDeviceClass.TIMESTAMP,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            icon="mdi:clipboard-check-outline",
+        )
+        for day in ("today", "tomorrow")
     ),
 )
 
@@ -306,12 +317,18 @@ class AlertsEnergyInformationSensor(AlertsEnergySensorBase):
     def native_value(self) -> str | datetime | None:
         if self.entity_description.key == "data_status":
             return self.coordinator.data_status
+        if self.entity_description.key.endswith("_checked_at"):
+            return source_checked_at(
+                self.coordinator.data, self.entity_description.key.split("_", 1)[0]
+            )
         return self.coordinator.last_successful_update
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
-        if self.entity_description.key != "data_status":
+        if self.entity_description.key == "last_successful_update":
             return None
+        if self.entity_description.key.endswith("_checked_at"):
+            return {"data_is_cached": self.coordinator.data_is_cached}
         data = self.coordinator.data
         return {
             "data_is_cached": self.coordinator.data_is_cached,

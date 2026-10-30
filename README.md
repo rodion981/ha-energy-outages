@@ -65,7 +65,7 @@ To change a selection, open **Settings → Devices & services → Alerts Energy 
 
 ## Entities
 
-Each configured queue creates **ten entities**:
+Each configured queue creates **thirteen entities**:
 
 | Entity | Purpose |
 |---|---|
@@ -77,12 +77,22 @@ Each configured queue creates **ten entities**:
 | Outage duration | Full planning interval duration, including possible intervals, when both boundaries are known |
 | Data status | Today's publication, validity and source availability; attributes also describe tomorrow |
 | Last successful API update | Time of the last successful response, retained during failures |
+| Source checked today / tomorrow | Two diagnostic timestamps showing when Alerts Energy checked each day's data |
+| Emergency notices | Advisory warning about active or possible emergency restrictions reported by the operator |
 | Schedule change | Event when today's or tomorrow's schedule is published or its outage periods change |
 | Outage calendar | Read-only calendar of published outage periods today and tomorrow |
 
 Find the actual entity IDs under **Settings → Devices & services → Alerts Energy Outages → Entities**. **Data status** and **Last successful API update** are in the device's **Diagnostics** section.
 
 Add the entities to an **Entities** card. For notifications, use **Next outage** in an automation time trigger, or the on/off transitions of **Outage in schedule**. Duration is a full period, not a countdown. Check `outage_type` when your automation must distinguish planned from conditional intervals.
+
+### Emergency notices and source checks
+
+**Emergency notices** uses `today_announcements` from the existing cached regional response. It is `on` for current `Emergency` announcements with state `active` or `possible`; `announcements` contains their state, scope (`local`, `regional`, `supplier`) and any provided timestamps. Cancelled, expired and future announcements do not activate the warning. Local timers handle effective/expiry times without another API request, including when polling is disabled. The warning can coexist with a published schedule and does not alter scheduled forecasts or the calendar. It does not confirm power loss at your address (`address_specific: false`). **`expires_at` is the announcement's validity deadline, not a restoration estimate.**
+
+An explicit empty list means no current emergency notice (`off`). Missing, malformed or out-of-date data means `unknown`, not an all-clear; a valid current warning takes precedence over another malformed item. During API failure, retained notices use their original validity times and expose `data_is_cached`. For notifications, create an automation with **Emergency notices** changing from `off` to `on`, then select your notification action. This avoids notifying on startup/reload or API recovery alone; it does not notify about each subsequent notice while already `on`. Never use this entity's `off` state as confirmation that electricity has returned.
+
+**Source checked today** and **Source checked tomorrow** are diagnostic timestamps from `today_checked_at`/`tomorrow_checked_at`, independent of publication status. They show when the service checked that day's data, while **Last successful API update** shows when HA received a response. Missing/invalid timestamps or a mismatched day produce `unknown`. Cached responses retain the original check times and expose `data_is_cached`.
 
 ## Reading the data
 

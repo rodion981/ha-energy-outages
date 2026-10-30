@@ -32,4 +32,4 @@ docker run --rm -v "$PWD:/github/workspace:ro" ghcr.io/home-assistant/hassfest
 
 For forecasts, test half-hour/midnight/DST boundaries, unknown start/end at the published horizon, typed entities and an actual HA timestamp automation. For shared polling, prove concurrent setup coalesces requests, one entry unloading preserves the others, failed setup releases resources and `pref_disable_polling` is respected.
 
-Release notes: [docs/RELEASE_NOTES_v2.6.1.md](docs/RELEASE_NOTES_v2.6.1.md). Hosted CI/HACS must pass for the exact commit/tag before publication.
+Release notes: [docs/RELEASE_NOTES_v2.7.0.md](docs/RELEASE_NOTES_v2.7.0.md). Hosted CI/HACS must pass for the exact commit/tag before publication.

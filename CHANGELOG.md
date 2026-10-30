@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.7.0 (2026-10-30)
+
+- Add advisory emergency notices and per-day source-check timestamps from the existing regional response, with scoped metadata, local effective/expiry transitions and truthful cached/unknown states. Preserve scheduled forecasts, calendar, polling limits and entity identities.
+- Додано аварійні попередження та час перевірки джерелом для кожного дня з поточної відповіді області: масштаб повідомлень, локальні переходи чинності та чесні кешовані/невідомі стани. Планові прогнози, календар, ліміти опитування й наявні ідентифікатори сутностей збережено.
+
 ## v2.6.1 (2026-10-30)
 
 - Use the original Alerts Energy website icon at 256/512 pixels and record its source; integration behavior is unchanged.

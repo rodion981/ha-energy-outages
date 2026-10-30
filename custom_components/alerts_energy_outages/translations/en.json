@@ -183,6 +183,12 @@
       },
       "last_successful_update": {
         "name": "Last successful API update"
+      },
+      "today_checked_at": {
+        "name": "Source checked today"
+      },
+      "tomorrow_checked_at": {
+        "name": "Source checked tomorrow"
       }
     },
     "binary_sensor": {
@@ -205,6 +211,9 @@
             "name": "Possible now"
           }
         }
+      },
+      "emergency_notices": {
+        "name": "Emergency notices"
       }
     }
   }

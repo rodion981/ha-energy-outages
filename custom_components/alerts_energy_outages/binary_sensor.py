@@ -18,6 +18,7 @@ from homeassistant.util import dt as dt_util
 from .const import CONF_ENTITY_UNIQUE_ID, DOMAIN, SCHEDULE_TIME_ZONE, SITE_URL
 from .coordinator import AlertsEnergyCoordinator, schedule_day_status
 from .schedule import normalize_day
+from .source import emergency_notices
 
 
 async def async_setup_entry(
@@ -27,7 +28,12 @@ async def async_setup_entry(
 ) -> None:
     """Set up the current-outage sensor."""
     coordinator: AlertsEnergyCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([AlertsEnergyOutageNow(coordinator, entry)])
+    async_add_entities(
+        [
+            AlertsEnergyOutageNow(coordinator, entry),
+            AlertsEnergyEmergencyNotices(coordinator, entry),
+        ]
+    )
 
 
 class AlertsEnergyOutageNow(
@@ -87,4 +93,42 @@ class AlertsEnergyOutageNow(
             "outage_type": schedule.slot_type(boundary),
             "planned_now": schedule.planned[boundary // 2] in (1, half_code),
             "possible_now": schedule.possible[boundary // 2] in (1, half_code),
+        }
+
+
+class AlertsEnergyEmergencyNotices(AlertsEnergyOutageNow):
+    """Advisory emergency notices, independent of scheduled or measured power."""
+
+    _attr_translation_key = "emergency_notices"
+    _attr_icon = "mdi:alert-outline"
+
+    def __init__(
+        self, coordinator: AlertsEnergyCoordinator, entry: ConfigEntry
+    ) -> None:
+        super().__init__(coordinator, entry)
+        identity = (
+            entry.data.get(CONF_ENTITY_UNIQUE_ID) or entry.unique_id or entry.entry_id
+        )
+        self._attr_unique_id = f"{identity}_emergency_notices"
+
+    @property
+    def available(self) -> bool:
+        """Missing rows are unavailable; absent optional fields remain unknown."""
+        return self.coordinator.data.get("schedule_found", True)
+
+    @property
+    def is_on(self) -> bool | None:
+        return emergency_notices(self.coordinator.data).warning
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        notices = emergency_notices(self.coordinator.data)
+        return {
+            "data_is_cached": self.coordinator.data_is_cached,
+            "area": self.coordinator.area,
+            "operator": self.coordinator.data["initiator"],
+            "queue": self.coordinator.data["queue"],
+            "date": self.coordinator.data.get("todayDate"),
+            "announcements": list(notices.notices),
+            "address_specific": False,
         }
