@@ -47,13 +47,14 @@ async def test_options_form_uses_default_or_saved_interval(
     form = await hass.config_entries.options.async_init(entry.entry_id)
     assert form["type"] == FlowResultType.FORM
     assert form["step_id"] == "init"
+    assert form["description_placeholders"] == {"source_url": "https://alerts.energy"}
     field = next(iter(form["data_schema"].schema))
     assert field.default() == expected
     hass.config_entries.options.async_abort(form["flow_id"])
     assert entry.options == options
 
 
-@pytest.mark.parametrize("minutes", [1, 5.0, 1440])
+@pytest.mark.parametrize("minutes", [15, 30.0, 1440])
 async def test_options_preserve_data_and_other_options(hass, entry, minutes):
     hass.config_entries.async_update_entry(entry, options={"retained": True})
     previous = dict(entry.data)
@@ -66,7 +67,7 @@ async def test_options_preserve_data_and_other_options(hass, entry, minutes):
     assert entry.unique_id == identity
 
 
-@pytest.mark.parametrize("minutes", [0, -1, 1441, "five", None])
+@pytest.mark.parametrize("minutes", [0, 1, 14, -1, 1441, "five", None])
 async def test_invalid_interval_does_not_change_options(hass, entry, minutes):
     form = await hass.config_entries.options.async_init(entry.entry_id)
     with pytest.raises(InvalidData):
@@ -78,7 +79,7 @@ async def test_invalid_interval_does_not_change_options(hass, entry, minutes):
 
 
 async def test_fractional_interval_shows_translated_error(hass, entry):
-    result = await save_interval(hass, entry, 1.5)
+    result = await save_interval(hass, entry, 15.5)
     assert result["type"] == FlowResultType.FORM
     assert result["errors"] == {CONF_SCAN_INTERVAL: "invalid_scan_interval"}
     assert not entry.options
@@ -95,11 +96,11 @@ async def test_live_options_reschedule_without_reload_and_survive_reload(
         source = coordinator.source
         listeners = len(entry.update_listeners)
         assert source.update_interval == timedelta(minutes=15)
-        await save_interval(hass, entry, 5)
+        await save_interval(hass, entry, 15)
         assert hass.data[DOMAIN][entry.entry_id] is coordinator
-        assert source.update_interval == timedelta(minutes=5)
+        assert source.update_interval == timedelta(minutes=15)
         assert fetch.call_count == 1
-        await advance(hass, freezer, 4 * 60)
+        await advance(hass, freezer, 14 * 60)
         assert fetch.call_count == 1
         await advance(hass, freezer, 65)
         assert fetch.call_count == 2
@@ -133,7 +134,7 @@ async def test_shared_interval_tracks_enabled_entries_and_unload(hass, entry, sc
         unique_id=f"{DEFAULT_OPERATOR}_2.1",
         minor_version=2,
         data={"operator": DEFAULT_OPERATOR, "queue": "2.1"},
-        options={CONF_SCAN_INTERVAL: 5},
+        options={CONF_SCAN_INTERVAL: 15},
     )
     row = deepcopy(schedule)
     row["queue"] = "2.1"
@@ -144,16 +145,16 @@ async def test_shared_interval_tracks_enabled_entries_and_unload(hass, entry, sc
         await hass.async_block_till_done()
         source = hass.data[DOMAIN][entry.entry_id].source
         assert source is hass.data[DOMAIN][other.entry_id].source
-        assert source.update_interval == timedelta(minutes=5)
+        assert source.update_interval == timedelta(minutes=15)
         assert fetch.call_count == 1
         hass.config_entries.async_update_entry(other, pref_disable_polling=True)
         await hass.async_block_till_done()
         assert source.update_interval == timedelta(minutes=20)
-        await save_interval(hass, other, 1)
+        await save_interval(hass, other, 15)
         assert source.update_interval == timedelta(minutes=20)
         hass.config_entries.async_update_entry(other, pref_disable_polling=False)
         await hass.async_block_till_done()
-        assert source.update_interval == timedelta(minutes=1)
+        assert source.update_interval == timedelta(minutes=15)
         assert await hass.config_entries.async_unload(other.entry_id)
         await hass.async_block_till_done()
         assert source.update_interval == timedelta(minutes=20)
@@ -171,20 +172,20 @@ async def test_disabled_polling_stays_stopped_and_clock_still_runs(
         await hass.async_block_till_done()
         coordinator = hass.data[DOMAIN][entry.entry_id]
         assert coordinator.last_update_success
-        await save_interval(hass, entry, 5)
+        await save_interval(hass, entry, 15)
         with patch.object(coordinator, "async_update_listeners") as clock:
             await advance(hass, freezer, 30 * 60)
         assert clock.called
         assert fetch.call_count == 1
         hass.config_entries.async_update_entry(entry, pref_disable_polling=False)
         await hass.async_block_till_done()
-        assert coordinator.source.update_interval == timedelta(minutes=5)
-        await advance(hass, freezer, 5 * 60 + 5)
+        assert coordinator.source.update_interval == timedelta(minutes=15)
+        await advance(hass, freezer, 15 * 60 + 5)
         assert fetch.call_count == 2
 
 
 async def test_regions_keep_independent_polling_options(hass, entry, schedule):
-    hass.config_entries.async_update_entry(entry, options={CONF_SCAN_INTERVAL: 5})
+    hass.config_entries.async_update_entry(entry, options={CONF_SCAN_INTERVAL: 15})
     with patch(FETCH, return_value=[schedule]) as fetch:
         assert await hass.config_entries.async_setup(entry.entry_id)
         other = MockConfigEntry(
@@ -205,7 +206,7 @@ async def test_regions_keep_independent_polling_options(hass, entry, schedule):
         source = hass.data[DOMAIN][entry.entry_id].source
         other_source = hass.data[DOMAIN][other.entry_id].source
         assert source is not other_source
-        assert source.update_interval == timedelta(minutes=5)
+        assert source.update_interval == timedelta(minutes=15)
         assert other_source.update_interval == timedelta(minutes=30)
         await save_interval(hass, entry, 60)
         assert source.update_interval == timedelta(minutes=60)

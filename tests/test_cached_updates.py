@@ -66,7 +66,7 @@ async def advance(hass, freezer, seconds):
     await hass.async_block_till_done()
 
 
-async def test_scheduled_failure_retries_in_one_minute_then_restores_interval(
+async def test_scheduled_failure_respects_minimum_then_restores_interval(
     hass, entry, schedule, freezer
 ):
     with patch(FETCH, return_value=[schedule]) as fetch:
@@ -78,12 +78,12 @@ async def test_scheduled_failure_retries_in_one_minute_then_restores_interval(
         await advance(hass, freezer, 15 * 60 + 5)
         assert fetch.call_count == 2
         assert not source.last_update_success
-        assert source.update_interval == timedelta(minutes=1)
+        assert source.update_interval == timedelta(minutes=15)
         # A second failed retry still keeps only one regional timer.
-        await advance(hass, freezer, 65)
+        await advance(hass, freezer, 15 * 60 + 5)
         assert fetch.call_count == 3
         fetch.side_effect = None
-        await advance(hass, freezer, 65)
+        await advance(hass, freezer, 15 * 60 + 5)
         assert fetch.call_count == 4
         assert source.last_update_success
         assert source.update_interval == timedelta(minutes=15)
@@ -93,7 +93,7 @@ async def test_scheduled_failure_retries_in_one_minute_then_restores_interval(
         assert fetch.call_count == 5
 
 
-@pytest.mark.parametrize("minutes", [1, 60, 1440])
+@pytest.mark.parametrize("minutes", [15, 60, 1440])
 async def test_recovery_preserves_configured_interval(
     hass, entry, schedule, freezer, minutes
 ):
@@ -104,9 +104,9 @@ async def test_recovery_preserves_configured_interval(
         coordinator = hass.data[DOMAIN][entry.entry_id]
         fetch.side_effect = AlertsEnergyApiError("offline")
         await coordinator.async_refresh()
-        assert coordinator.source.update_interval == timedelta(minutes=1)
+        assert coordinator.source.update_interval == timedelta(minutes=minutes)
         fetch.side_effect = None
-        await advance(hass, freezer, 65)
+        await advance(hass, freezer, minutes * 60 + 5)
         assert fetch.call_count == 3
         assert coordinator.source.update_interval == timedelta(minutes=minutes)
         assert entry.options[CONF_SCAN_INTERVAL] == minutes
@@ -205,11 +205,11 @@ async def test_shared_retry_respects_option_changes_and_final_unload(
         await coordinator.async_refresh()
         hass.config_entries.async_update_entry(other, options={CONF_SCAN_INTERVAL: 3})
         await hass.async_block_till_done()
-        assert coordinator.source.update_interval == timedelta(minutes=1)
+        assert coordinator.source.update_interval == timedelta(minutes=15)
         fetch.side_effect = None
-        await advance(hass, freezer, 65)
+        await advance(hass, freezer, 15 * 60 + 5)
         assert fetch.call_count == 3
-        assert coordinator.source.update_interval == timedelta(minutes=3)
+        assert coordinator.source.update_interval == timedelta(minutes=15)
         assert await hass.config_entries.async_unload(other.entry_id)
         await hass.async_block_till_done()
         assert coordinator.source.update_interval == timedelta(minutes=15)
@@ -217,5 +217,5 @@ async def test_shared_retry_respects_option_changes_and_final_unload(
         await coordinator.async_refresh()
         assert await hass.config_entries.async_unload(entry.entry_id)
         await hass.async_block_till_done()
-        await advance(hass, freezer, 65)
+        await advance(hass, freezer, 15 * 60 + 5)
         assert fetch.call_count == 4

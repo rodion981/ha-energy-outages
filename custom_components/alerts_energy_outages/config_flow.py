@@ -10,7 +10,6 @@ from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntry, ConfigFlowResult
 from homeassistant.const import CONF_NAME
 from homeassistant.core import callback
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorMode,
@@ -18,7 +17,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 
-from .api import AlertsEnergyApi, AlertsEnergyApiError, Territory
+from .api import AlertsEnergyApi, AlertsEnergyApiError, Territory, async_get_api
 from .const import (
     CONF_AREA,
     CONF_ENTITY_UNIQUE_ID,
@@ -30,6 +29,7 @@ from .const import (
     DOMAIN,
     MAX_SCAN_INTERVAL_MINUTES,
     MIN_SCAN_INTERVAL_MINUTES,
+    SITE_URL,
 )
 
 SKIP_LOCALITY = "__skip__"
@@ -68,9 +68,8 @@ class AlertsEnergyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type:
         """Offer polling options without repeating regional setup."""
         return AlertsEnergyOptionsFlow(config_entry)
 
-    @property
-    def _api(self) -> AlertsEnergyApi:
-        return AlertsEnergyApi(async_get_clientsession(self.hass))
+    async def _async_api(self) -> AlertsEnergyApi:
+        return await async_get_api(self.hass)
 
     def _retry_schema(self, back_label: str) -> vol.Schema:
         """Offer retry or return to a working choice when a source has no data."""
@@ -108,7 +107,8 @@ class AlertsEnergyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type:
         errors: dict[str, str] = {}
         areas: dict[str, Territory] = {}
         try:
-            areas = {item.slug: item for item in await self._api.async_get_areas()}
+            api = await self._async_api()
+            areas = {item.slug: item for item in await api.async_get_areas()}
         except AlertsEnergyApiError:
             errors["base"] = "cannot_connect"
         else:
@@ -151,6 +151,7 @@ class AlertsEnergyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type:
             step_id=step_id,
             data_schema=schema if choices else vol.Schema({}),
             errors=errors,
+            description_placeholders={"source_url": SITE_URL},
         )
 
     async def async_step_locality(
@@ -161,9 +162,10 @@ class AlertsEnergyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type:
         parent = self._parents[-1]
         children: dict[str, Territory] = {}
         try:
+            api = await self._async_api()
             children = {
                 item.katottg: item
-                for item in await self._api.async_get_children(parent.katottg)
+                for item in await api.async_get_children(parent.katottg)
             }
         except AlertsEnergyApiError:
             errors["base"] = "cannot_connect"
@@ -220,7 +222,8 @@ class AlertsEnergyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type:
         errors: dict[str, str] = {}
         operators: dict[str, str] = {}
         try:
-            operators = await self._api.async_get_operators(self._selection[CONF_AREA])
+            api = await self._async_api()
+            operators = await api.async_get_operators(self._selection[CONF_AREA])
         except AlertsEnergyApiError:
             errors["base"] = "cannot_connect"
         else:
@@ -269,7 +272,8 @@ class AlertsEnergyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type:
         operator = self._selection[CONF_OPERATOR]
         self._queues = []
         try:
-            self._queues = await self._api.async_get_queues(operator, area)
+            api = await self._async_api()
+            self._queues = await api.async_get_queues(operator, area)
         except AlertsEnergyApiError:
             errors["base"] = "cannot_connect"
         else:
@@ -384,8 +388,11 @@ class AlertsEnergyOptionsFlow(config_entries.OptionsFlow):
                 {
                     vol.Required(
                         CONF_SCAN_INTERVAL,
-                        default=self._entry.options.get(
-                            CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_MINUTES
+                        default=max(
+                            MIN_SCAN_INTERVAL_MINUTES,
+                            self._entry.options.get(
+                                CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_MINUTES
+                            ),
                         ),
                     ): NumberSelector(
                         {
@@ -399,4 +406,5 @@ class AlertsEnergyOptionsFlow(config_entries.OptionsFlow):
                 }
             ),
             errors=errors,
+            description_placeholders={"source_url": SITE_URL},
         )

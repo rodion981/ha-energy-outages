@@ -23,6 +23,7 @@ from .const import (
     DEFAULT_OPERATOR,
     DEFAULT_SCAN_INTERVAL_MINUTES,
     DOMAIN,
+    MIN_SCAN_INTERVAL_MINUTES,
     RETRY_INTERVAL_SECONDS,
     SCAN_INTERVAL_SECONDS,
     SCHEDULE_TIME_ZONE,
@@ -143,9 +144,11 @@ class AlertsEnergyAreaCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
         finally:
             current_entry.reset(token)
         self._api = api
+        self.data: list[dict[str, Any]] | None = None
         self.area = area
         self.users = 0
         self._configured_update_interval = timedelta(seconds=SCAN_INTERVAL_SECONDS)
+        self._retry_seconds: float = RETRY_INTERVAL_SECONDS
         self.last_successful_update: datetime | None = None
         self._initial_lock = asyncio.Lock()
         self._unsub_clock: Callable[[], None] | None = async_track_utc_time_change(
@@ -162,9 +165,13 @@ class AlertsEnergyAreaCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
             self.update_interval = (
                 self._configured_update_interval
                 if self.last_update_success
-                else min(
+                else max(
                     self._configured_update_interval,
-                    timedelta(seconds=RETRY_INTERVAL_SECONDS),
+                    timedelta(
+                        seconds=max(
+                            self._retry_seconds, self._api.retry_delay(self.area)
+                        )
+                    ),
                 )
             )
             super()._schedule_refresh()
@@ -173,13 +180,18 @@ class AlertsEnergyAreaCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
     def async_update_polling_schedule(self) -> None:
         """Use the shortest interval requested by polling-enabled entries."""
         self._configured_update_interval = timedelta(
-            minutes=min(
-                (
-                    entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_MINUTES)
-                    for entry in self.async_contexts()
-                    if not entry.pref_disable_polling
+            minutes=max(
+                MIN_SCAN_INTERVAL_MINUTES,
+                min(
+                    (
+                        entry.options.get(
+                            CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_MINUTES
+                        )
+                        for entry in self.async_contexts()
+                        if not entry.pref_disable_polling
+                    ),
+                    default=DEFAULT_SCAN_INTERVAL_MINUTES,
                 ),
-                default=DEFAULT_SCAN_INTERVAL_MINUTES,
             )
         )
         self.update_interval = self._configured_update_interval
@@ -188,11 +200,11 @@ class AlertsEnergyAreaCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
             self._schedule_refresh()
 
     async def async_ensure_ready(self) -> None:
-        """Coalesce concurrent first refreshes without caching failed requests."""
+        """Coalesce startup and permit a retained response with truthful health."""
         async with self._initial_lock:
             if self.data is None or not self.last_update_success:
                 await self.async_refresh()
-                if not self.last_update_success or self.data is None:
+                if self.data is None:
                     raise ConfigEntryNotReady(
                         str(self.last_exception or "No regional data received")
                     ) from self.last_exception
@@ -201,8 +213,15 @@ class AlertsEnergyAreaCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
         try:
             rows = await self._api.async_get_schedules(self.area)
         except AlertsEnergyApiError as err:
+            self._retry_seconds = max(RETRY_INTERVAL_SECONDS, err.retry_after)
+            if (
+                self.data is None
+                and (snapshot := self._api.cached_schedule(self.area)) is not None
+            ):
+                self.data, self.last_successful_update = snapshot
             raise UpdateFailed(str(err)) from err
-        self.last_successful_update = dt_util.utcnow()
+        snapshot = self._api.cached_schedule(self.area)
+        self.last_successful_update = snapshot[1] if snapshot else dt_util.utcnow()
         return rows
 
     async def async_shutdown(self) -> None:

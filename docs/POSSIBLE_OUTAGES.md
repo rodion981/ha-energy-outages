@@ -2,6 +2,8 @@
 
 Public API/frontend investigation snapshot: 2026-10-17. The contract below is now implemented locally; the captured examples remain a point-in-time source record.
 
+The authenticated API now names these fields `today_possible`, `tomorrow_possible`, `today_date` and `today_status` (and the corresponding tomorrow fields). `api.py` normalizes them to the existing internal contract and also accepts the historical camelCase format below. The recorded fixtures are intentionally unchanged.
+
 ## Verified contract
 
 - `todayPossible` / `tomorrowPossible` are optional parallel arrays for the corresponding day's `Date` and `Status`, not probabilities or an alternative queue.
