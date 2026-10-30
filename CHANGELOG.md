@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.6.1 (2026-10-30)
+
+- Use the original Alerts Energy website icon at 256/512 pixels and record its source; integration behavior is unchanged.
+- Іконка з сайту Alerts Energy у розмірах 256/512 px зі збереженим джерелом; поведінка інтеграції незмінна.
+
 ## v2.6.0 (2026-10-30)
 
 ### English

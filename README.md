@@ -34,7 +34,7 @@ Example from a working installation with the Ukrainian interface. Entity names f
 - Internet access from Home Assistant to `https://alerts.energy`.
 - HACS for installation and updates. No personal Alerts Energy account, subscription or API key is required: the integration uses the shared project key provided by Alerts Energy.
 
-The integration includes its own icon for Home Assistant 2026.3 and newer. Earlier supported versions may show a generic integration icon.
+The integration uses the [Alerts Energy icon](./docs/BRANDING.md) for Home Assistant 2026.3 and newer. Earlier supported versions may show a generic integration icon.
 
 ## Installation
 
