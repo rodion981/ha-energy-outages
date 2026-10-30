@@ -59,7 +59,7 @@
     "step": {
       "init": {
         "title": "Polling interval",
-        "description": "Choose a whole number of minutes from 15 to 1440 (default: 15). Entries in the same region share one request using the shortest interval among entries with polling enabled. Changes apply immediately.",
+        "description": "Choose a whole number of minutes from 15 to 1440 (default: 15). Entries in the same region share one request using the shortest interval among entries with polling enabled. Changes apply immediately.\n\nData source: [Alerts Energy]({source_url}). Free access for this integration is provided by the Alerts Energy team.",
         "data": {
           "scan_interval": "Polling interval (minutes)"
         }

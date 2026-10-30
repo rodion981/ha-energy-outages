@@ -406,4 +406,5 @@ class AlertsEnergyOptionsFlow(config_entries.OptionsFlow):
                 }
             ),
             errors=errors,
+            description_placeholders={"source_url": SITE_URL},
         )

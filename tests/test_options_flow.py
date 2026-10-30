@@ -47,6 +47,7 @@ async def test_options_form_uses_default_or_saved_interval(
     form = await hass.config_entries.options.async_init(entry.entry_id)
     assert form["type"] == FlowResultType.FORM
     assert form["step_id"] == "init"
+    assert form["description_placeholders"] == {"source_url": "https://alerts.energy"}
     field = next(iter(form["data_schema"].schema))
     assert field.default() == expected
     hass.config_entries.options.async_abort(form["flow_id"])
