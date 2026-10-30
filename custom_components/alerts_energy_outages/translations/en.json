@@ -3,14 +3,14 @@
     "step": {
       "user": {
         "title": "Select region",
-        "description": "Choose your oblast or a city with special status from Alerts Energy.",
+        "description": "Choose your oblast or a city with special status from Alerts Energy.\n\nData source: [Alerts Energy](https://alerts.energy/). Free access for this integration is provided by the Alerts Energy team.",
         "data": {
           "area": "Region / city with special status"
         }
       },
       "reconfigure": {
         "title": "Change location and queue",
-        "description": "Choose a region, settlement, operator and exact queue. Existing entity IDs are preserved after the final step.",
+        "description": "Choose a region, settlement, operator and exact queue. Existing entity IDs are preserved after the final step.\n\nData source: [Alerts Energy](https://alerts.energy/). Free access for this integration is provided by the Alerts Energy team.",
         "data": {
           "area": "Region / city with special status"
         }
@@ -59,14 +59,14 @@
     "step": {
       "init": {
         "title": "Polling interval",
-        "description": "Choose a whole number of minutes from 1 to 1440 (default: 15). Entries in the same region share one request using the shortest interval among entries with polling enabled. Changes apply immediately.",
+        "description": "Choose a whole number of minutes from 15 to 1440 (default: 15). Entries in the same region share one request using the shortest interval among entries with polling enabled. Changes apply immediately.",
         "data": {
           "scan_interval": "Polling interval (minutes)"
         }
       }
     },
     "error": {
-      "invalid_scan_interval": "Enter a whole number of minutes from 1 to 1440."
+      "invalid_scan_interval": "Enter a whole number of minutes from 15 to 1440."
     }
   },
   "entity": {

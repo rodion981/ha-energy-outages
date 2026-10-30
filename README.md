@@ -32,7 +32,7 @@ Example from a working installation with the Ukrainian interface. Entity names f
 
 - Home Assistant **2024.6 or newer**.
 - Internet access from Home Assistant to `https://alerts.energy`.
-- HACS for installation and updates. No Alerts Energy account or API key is required.
+- HACS for installation and updates. No personal Alerts Energy account, subscription or API key is required: the integration uses the shared project key provided by Alerts Energy.
 
 The integration includes its own icon for Home Assistant 2026.3 and newer. Earlier supported versions may show a generic integration icon.
 
@@ -137,7 +137,7 @@ An event touching the edge of published coverage is displayed only up to that bo
 
 ## Source and updates
 
-The integration reads the public Alerts Energy endpoint:
+The integration reads the authenticated Alerts Energy endpoint:
 
 ```text
 https://alerts.energy/api/v1/source-registry/areas/{area}/shutdowns
@@ -145,13 +145,17 @@ https://alerts.energy/api/v1/source-registry/areas/{area}/shutdowns
 
 It selects the exact operator/queue record and interprets each hourly code as two half-hour slots: `0` = no planned outage, `1` = outage for the whole hour, `2` = first half, `3` = second half. Adjacent slots form continuous periods.
 
-The same codes apply to `todayPossible`/`tomorrowPossible`. An absent field or `[]` adds no conditional intervals; a present null, malformed array or unknown code makes that day's data unusable. Code `9` in either array or `EmergencyShutdowns` on a current date is emergency data. The main array must still be complete and dated; Possible alone cannot complete a missing schedule. `NoShutdowns` requires a zero planned array; separately supplied possible intervals still participate in planning, as on the source website.
+The same codes apply to `today_possible`/`tomorrow_possible`. An absent field or `[]` adds no conditional intervals; a present null, malformed array or unknown code makes that day's data unusable. Code `9` in either array or `EmergencyShutdowns` on a current date is emergency data. The main array must still be complete and dated; Possible alone cannot complete a missing schedule. `NoShutdowns` requires a zero planned array; separately supplied possible intervals still participate in planning, as on the source website.
 
 Entries in the same region share one poller and clock listener. Removing one entry keeps the others working; removing the last releases the region's resources. Source coverage and publication depend on Alerts Energy, and its API may change.
 
-Set the interval under **Settings → Devices & services → Alerts Energy Outages → Configure** for the relevant entry: **1–1440 whole minutes**, default **15**. It applies without restarting HA or reloading entities. The shared regional poller uses the shortest interval among entries with polling enabled; entries with polling disabled do not shorten it. Half-hour schedule transitions continue to update independently of API polling.
+Set the interval under **Settings → Devices & services → Alerts Energy Outages → Configure** for the relevant entry: **15–1440 whole minutes**, default **15**. It applies without restarting HA or reloading entities. The shared regional poller uses the shortest interval among entries with polling enabled; entries with polling disabled do not shorten it. Half-hour schedule transitions continue to update independently of API polling.
 
-After a failed request, the regional poller retries once per minute until a request succeeds, then resumes the configured interval. Disabling polling also disables these retries. The last received schedule remains usable only while its day/date and publication status are valid; a new missing, invalid or emergency response is never replaced with an older published schedule. This cache is in memory and does not provide offline startup after a Home Assistant restart.
+Requests to an area's schedules are separated by at least 15 minutes, including setup, queue selection, manual updates, reloads and restarts. Previously saved intervals below 15 minutes are raised to 15; longer intervals are preserved. Concurrent callers share the same regional response. After failures, retries use increasing delays (15, 30, 60 minutes and so on, capped at 24 hours); a longer configured interval or server `Retry-After` takes precedence. Disabling polling also disables automatic retries.
+
+The last received response and request deadlines are saved in Home Assistant storage. This permits startup with retained data if the API is temporarily unavailable, provided a response has previously been saved. The last successful update keeps its actual receipt time. The schedule is usable only while its day/date and publication status are valid; new missing, invalid or emergency data replace the older response and are never silently replaced with an old published plan.
+
+Each Home Assistant installation generates one random UUIDv4, persists it locally and sends it in `X-HA-Instance-ID` alongside the project authorization key on API requests. It is shared across all regions and queues, including setup flows. No address, Home Assistant URL or HA authentication token is sent. The project key and installation UUID are excluded from integration diagnostics and entity attributes. Data and free access for this integration are provided by [Alerts Energy](https://alerts.energy/).
 
 Schedule/forecast sensors, the binary sensor and calendar expose **`data_is_cached: true`** while using a retained response after a failed refresh. **Data status** continues to report the actual error (`connection_error` or `invalid`), exposes the same flag and keeps the per-day statuses; **Last successful API update** retains its previous timestamp. A cached schedule may miss subsequent source corrections. Dashboards can display it with an update warning instead of hiding it solely because Data status reports a request error. Cached clock transitions and calculations continue, but dates are never extended or silently moved to another day. Recovery with unchanged periods does not produce a schedule-change notification.
 

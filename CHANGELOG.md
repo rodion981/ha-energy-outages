@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.6.0-alpha.1 (2026-10-30)
+
+### English
+- Support authenticated Alerts Energy API with the shared project key, one persistent installation UUID, and snake_case/legacy response normalization without entity identity changes.
+- Enforce a shared 15-minute regional request minimum across setup, polling, manual refresh and restart; honor Retry-After and exponential error backoff. Persist response/deadlines for cache recovery without extending schedule dates.
+- Raise saved intervals below 15 minutes, preserve longer intervals, and link Alerts Energy in region selection and reconfiguration.
+
+### Українською
+- Підтримка авторизованого API Alerts Energy: спільний ключ проєкту, постійний UUID установки, snake_case і старий формат без зміни ідентифікаторів сутностей.
+- Спільний мінімум 15 хв між запитами області для налаштування, опитування, ручного оновлення й перезапуску; Retry-After та поступове збільшення пауз. Збереження відповіді й термінів запитів без подовження дат графіка.
+- Підвищення збережених інтервалів нижче 15 хв, збереження більших і посилання на Alerts Energy у виборі області та переналаштуванні.
+
 ## v2.5.1 (2026-10-18)
 
 ### English
