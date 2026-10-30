@@ -31,7 +31,7 @@ from .const import (
     SCAN_INTERVAL_SECONDS,
     SCHEDULE_TIME_ZONE,
 )
-from .schedule import normalize_day
+from .schedule import align_schedule_dates, normalize_day
 from .source import emergency_notices
 
 _LOGGER = logging.getLogger(__name__)
@@ -340,8 +340,11 @@ class AlertsEnergyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     @callback
     def _handle_source_update(self) -> None:
-        self.data = AlertsEnergyApi.select_schedule(
-            self.source.data or [], self._operator, self._queue
+        self.data = align_schedule_dates(
+            AlertsEnergyApi.select_schedule(
+                self.source.data or [], self._operator, self._queue
+            ),
+            dt_util.utcnow(),
         )
         self.last_update_success = self.source.last_update_success
         self.last_exception = self.source.last_exception

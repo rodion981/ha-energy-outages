@@ -1,0 +1,173 @@
+# Install custom:button-card through HACS, then replace the entity IDs below.
+# Copy this entire card into a Manual card. Times and schedule bars use Europe/Kyiv.
+type: custom:button-card
+variables:
+  title: Моя черга
+  entities:
+    today: sensor.my_queue_today
+    tomorrow: sensor.my_queue_tomorrow
+    outage_now: binary_sensor.my_queue_outage_now
+    next_outage: sensor.my_queue_next_outage
+    restoration: sensor.my_queue_expected_restoration
+    duration: sensor.my_queue_outage_duration
+    status: sensor.my_queue_data_status
+    received: sensor.my_queue_last_successful_update
+    checked: sensor.my_queue_today_checked_at
+    emergency: binary_sensor.my_queue_emergency_notices
+  # Optional: a separate measured-power binary_sensor; on MUST mean power present.
+  actual_power: ""
+entity: '[[[ return variables.entities.today; ]]]'
+triggers_update:
+  - '[[[ return variables.entities.today; ]]]'
+  - '[[[ return variables.entities.tomorrow; ]]]'
+  - '[[[ return variables.entities.outage_now; ]]]'
+  - '[[[ return variables.entities.next_outage; ]]]'
+  - '[[[ return variables.entities.restoration; ]]]'
+  - '[[[ return variables.entities.duration; ]]]'
+  - '[[[ return variables.entities.status; ]]]'
+  - '[[[ return variables.entities.received; ]]]'
+  - '[[[ return variables.entities.checked; ]]]'
+  - '[[[ return variables.entities.emergency; ]]]'
+  - '[[[ return variables.actual_power || variables.entities.today; ]]]'
+show_name: false
+show_icon: false
+show_state: false
+tap_action:
+  action: more-info
+hold_action:
+  action: none
+styles:
+  card:
+    - padding: 18px
+    - border-radius: 24px
+    - box-shadow: none
+    - cursor: default
+  grid:
+    - grid-template-areas: '"body"'
+    - grid-template-columns: minmax(0, 1fr)
+  custom_fields:
+    body:
+      - text-align: left
+      - white-space: normal
+      - min-width: 0
+custom_fields:
+  body: |
+    [[[
+      const esc = value => String(value ?? '').replace(/[&<>"']/g,
+        ch => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[ch]));
+      const get = key => states[variables.entities[key]];
+      const known = value => value && !['unknown', 'unavailable'].includes(value.state);
+      const published = value => known(value) && value.attributes.schedule_status === 'published';
+      const today = get('today');
+      const tomorrow = get('tomorrow');
+      const outage = get('outage_now');
+      const attrs = today?.attributes || {};
+      const scheduledKnown = published(today) && known(outage) && ['on', 'off'].includes(outage.state);
+      const scheduledOff = scheduledKnown && outage.state === 'on';
+      const possibleNow = scheduledOff && outage.attributes.possible_now && !outage.attributes.planned_now;
+      const actual = variables.actual_power ? states[variables.actual_power] : null;
+      const actualKnown = known(actual) && ['on', 'off'].includes(actual.state);
+      let badge = scheduledKnown ? (scheduledOff ? 'Відключення за графіком' : 'За графіком без відключень') : 'Немає графіка';
+      let tone = scheduledKnown ? (scheduledOff ? 'warning' : 'good') : 'muted';
+      if (possibleNow) badge = 'Можливе відключення';
+      if (variables.actual_power) {
+        badge = actualKnown ? (actual.state === 'on' ? 'Світло є' : 'Світла немає') : 'Фактичний стан невідомий';
+        tone = actualKnown ? (actual.state === 'on' ? 'good' : 'warning') : 'muted';
+      }
+      const time = (value, full = false) => {
+        if (!known(value)) return '—';
+        const date = new Date(value.state);
+        if (!Number.isFinite(date.getTime())) return '—';
+        return new Intl.DateTimeFormat('uk-UA', {
+          timeZone: 'Europe/Kyiv', hour: '2-digit', minute: '2-digit',
+          ...(full ? {day: '2-digit', month: '2-digit'} : {})
+        }).format(date);
+      };
+      const periods = value => {
+        const source = value?.attributes?.periods;
+        if (!Array.isArray(source)) return '—';
+        return source.map(p => `${esc(p.start)}–${esc(p.end)}`).join('; ') || 'Без відключень за графіком';
+      };
+      const paint = (slots, list, color) => {
+        if (!Array.isArray(list)) return;
+        const boundary = text => {
+          if (typeof text !== 'string' || !/^(?:[01]\d|2[0-3]):(?:00|30)$|^24:00$/.test(text)) return NaN;
+          const [h, m] = text.split(':').map(Number);
+          return h * 2 + m / 30;
+        };
+        for (const period of list) {
+          const start = boundary(period.start), end = boundary(period.end);
+          if (!Number.isInteger(start) || !Number.isInteger(end) || start >= end) continue;
+          for (let slot = start; slot < end; slot++) slots[slot] = color;
+        }
+      };
+      const day = (value, label) => {
+        if (!published(value)) return `<section class="day"><strong>${label}</strong><p class="secondary">Графік недоступний</p></section>`;
+        const data = value.attributes;
+        const slots = Array(48).fill('clear');
+        paint(slots, data.possible_periods, 'possible');
+        paint(slots, data.planned_periods, 'planned');
+        const date = /^\d{4}-\d{2}-\d{2}$/.test(data.date || '') ? ` · ${data.date.slice(8)}.${data.date.slice(5, 7)}` : '';
+        return `<section class="day"><strong>${label}${esc(date)}</strong>
+          <p>${periods(value)}</p>
+          <div class="timeline" role="img" aria-label="${label}: ${esc((data.periods || []).map(p => `${p.start}–${p.end}`).join('; '))}">
+            ${slots.map(kind => `<span class="slot ${kind}"></span>`).join('')}
+          </div><div class="hours"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div></section>`;
+      };
+      const event = get(scheduledOff ? 'restoration' : 'next_outage');
+      const eventTime = scheduledKnown ? time(event, true) : '—';
+      const duration = get('duration');
+      const minutes = known(duration) ? Number(duration.state) : NaN;
+      const eventType = event?.attributes?.outage_type;
+      const typeLabel = eventType === 'possible' ? 'Можливий інтервал' : eventType === 'mixed' ? 'Планові й можливі інтервали' : 'Плановий інтервал';
+      const eventBody = eventTime === '—' ? 'У доступних даних немає підтвердженого часу наступної події.' :
+        `${esc(eventTime)} · ${typeLabel}<br>${Number.isFinite(minutes) && minutes > 0 ? `Тривалість періоду: ${esc(minutes)} хв` : 'Повна тривалість невідома'}`;
+      const status = get('status');
+      const cached = attrs.data_is_cached === true || status?.attributes?.data_is_cached === true;
+      const labels = {
+        published: 'Графік опубліковано', unpublished: 'Графік не опубліковано',
+        stale: 'Застаріла дата графіка', invalid: 'Некоректні дані джерела',
+        not_found: 'Чергу не знайдено', connection_error: 'Помилка отримання API', emergency: 'Аварійний статус графіка'
+      };
+      const health = cached ? 'Збережені дані · збій оновлення' : (labels[status?.state] || 'Немає даних');
+      const emergency = get('emergency');
+      const warning = emergency?.state === 'on' ? '<div class="notice">⚠ Оператор повідомляє про чинні або можливі аварійні обмеження. Це не підтвердження відключення вашого будинку.</div>' : '';
+      const actualNote = variables.actual_power ?
+        (scheduledKnown ? `За графіком: ${possibleNow ? 'можливе відключення' : scheduledOff ? 'відключення' : 'без відключень'}` : 'Немає достовірного графіка для порівняння') : 'Статус і прогноз визначені за графіком, без вимірювання напруги.';
+      return `<div class="outage-card">
+        <header><div class="place"><ha-icon icon="mdi:flash"></ha-icon><div><strong>${esc(variables.title)}</strong><div class="secondary">Черга ${esc(attrs.queue || '—')}</div></div></div><span class="badge ${tone}">${badge}</span></header>
+        <p class="secondary">${actualNote}</p>${warning}
+        <div class="forecast"><ha-icon icon="mdi:calendar-clock"></ha-icon><div><strong>${eventTime === '—' ? 'Прогноз наступної події відсутній' : scheduledOff ? 'Очікуване відновлення за графіком' : 'Наступне відключення'}</strong><p>${eventBody}</p></div></div>
+        ${day(today, 'Сьогодні')}${day(tomorrow, 'Завтра')}
+        <div class="legend"><span>🔴 Планові</span><span>🟡 Можливі</span></div>
+        <footer><span>${health}</span><span>API: ${esc(time(get('received')))} · Джерело: ${esc(time(get('checked')))}</span></footer>
+        <nav><span>Час: Київ</span><a href="/calendar">Календар ↗</a><a href="https://alerts.energy/" target="_blank" rel="noopener noreferrer">Alerts Energy ↗</a></nav>
+      </div>`;
+    ]]]
+extra_styles: |
+  .outage-card { color: var(--primary-text-color); font-size: 13px; line-height: 1.45; }
+  header, .place, .forecast, footer, nav, .legend { display: flex; gap: 10px; }
+  header { justify-content: space-between; align-items: center; }
+  .place { align-items: center; min-width: 0; }
+  .place strong { font-size: 17px; overflow-wrap: anywhere; }
+  .place ha-icon { color: #f3b541; flex-shrink: 0; }
+  .secondary, .hours, footer, nav, .legend { color: var(--secondary-text-color); font-size: 11px; }
+  p { margin: 7px 0; overflow-wrap: anywhere; }
+  .badge { border-radius: 18px; padding: 5px 9px; max-width: 48%; text-align: center; font-size: 11px; }
+  .good { color: #53beaa; background: rgba(83,190,170,.12); }
+  .warning { color: #e7b64a; background: rgba(231,182,74,.14); }
+  .muted { color: var(--secondary-text-color); background: rgba(128,128,128,.12); }
+  .forecast { padding: 13px; margin: 12px 0; border: 1px solid rgba(127,187,216,.3); border-radius: 15px; background: rgba(127,187,216,.08); }
+  .forecast ha-icon { color: #7fbbd8; flex-shrink: 0; }
+  .forecast p { margin-bottom: 0; }
+  .notice { padding: 10px; border-radius: 12px; background: rgba(231,182,74,.12); color: #e7b64a; }
+  .day { margin-top: 15px; }
+  .timeline { display: flex; gap: 1px; height: 9px; border-radius: 5px; overflow: hidden; }
+  .slot { flex: 1; min-width: 0; background: rgba(83,190,170,.2); }
+  .slot.planned { background: #d77883; }
+  .slot.possible { background: #e7b64a; }
+  .hours { display: flex; justify-content: space-between; margin-top: 3px; }
+  .legend { margin: 9px 0 12px; flex-wrap: wrap; }
+  footer { border-top: 1px solid rgba(128,128,128,.2); padding-top: 10px; justify-content: space-between; flex-wrap: wrap; }
+  nav { margin-top: 8px; flex-wrap: wrap; justify-content: space-between; }
+  a { color: var(--primary-color, #7fbbd8); text-decoration: none; }

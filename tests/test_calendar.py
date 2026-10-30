@@ -227,7 +227,8 @@ async def test_localized_descriptions_and_clock_only_transitions(
         freezer.move_to(boundary)
         async_fire_time_changed(hass, boundary)
         await hass.async_block_till_done()
-        assert hass.states.get(calendar.entity_id).state == "unavailable"
+        assert hass.states.get(calendar.entity_id).state == "off"
+        assert fetch.call_count == 1
 
 
 async def test_actual_calendar_http_and_service(hass, entry, schedule, hass_client):
