@@ -37,7 +37,7 @@ async def test_forecast_types_and_clock_transition(hass, entry, schedule, freeze
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
         ids = entities(hass, entry)
-        assert len(ids) == 10
+        assert len(ids) == 13
         next_state = hass.states.get(ids["next_outage"])
         assert next_state.attributes["device_class"] == "timestamp"
         assert datetime.fromisoformat(next_state.state) == datetime(

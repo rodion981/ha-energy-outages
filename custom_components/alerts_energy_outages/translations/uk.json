@@ -183,6 +183,12 @@
       },
       "last_successful_update": {
         "name": "Останнє успішне отримання даних"
+      },
+      "today_checked_at": {
+        "name": "Перевірка джерелом: сьогодні"
+      },
+      "tomorrow_checked_at": {
+        "name": "Перевірка джерелом: завтра"
       }
     },
     "binary_sensor": {
@@ -205,6 +211,9 @@
             "name": "Можливе зараз"
           }
         }
+      },
+      "emergency_notices": {
+        "name": "Аварійні повідомлення"
       }
     }
   }

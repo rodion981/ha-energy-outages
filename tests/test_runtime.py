@@ -25,8 +25,9 @@ QUEUES = "custom_components.alerts_energy_outages.api.AlertsEnergyApi.async_get_
 
 def entity_ids(hass, entry):
     registry = er.async_get(hass)
+    identity = entry.data.get("entity_unique_id") or entry.unique_id or entry.entry_id
     return {
-        item.unique_id.rsplit("_", 1)[-1]: item.entity_id
+        item.unique_id.removeprefix(identity + "_"): item.entity_id
         for item in er.async_entries_for_config_entry(registry, entry.entry_id)
     }
 
@@ -36,10 +37,10 @@ async def test_setup_registry_reload(hass, entry, schedule):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
         ids = entity_ids(hass, entry)
-        assert len(ids) == 10
+        assert len(ids) == 13
         assert hass.states.get(ids["today"]).state == "12:00–12:30"
         assert hass.states.get(ids["tomorrow"]).state == "No outages"
-        binary = hass.states.get(ids["now"])
+        binary = hass.states.get(ids["outage_now"])
         assert binary.state == "on"
         assert binary.attributes["device_class"] == "problem"
         devices = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
@@ -65,7 +66,7 @@ async def test_independent_days(hass, entry, schedule):
     ids = entity_ids(hass, entry)
     assert hass.states.get(ids["today"]).state != "unavailable"
     assert hass.states.get(ids["tomorrow"]).state == "unavailable"
-    assert hass.states.get(ids["now"]).state == "on"
+    assert hass.states.get(ids["outage_now"]).state == "on"
 
 
 async def test_transport_failure_recovery(hass, entry, schedule):
@@ -80,11 +81,19 @@ async def test_transport_failure_recovery(hass, entry, schedule):
         assert all(
             hass.states.get(item).state == previous[key]
             for key, item in ids.items()
-            if key not in {"status", "update", "changed"}
+            if key
+            not in {
+                "data_status",
+                "last_successful_update",
+                "schedule_changed",
+                "today_checked_at",
+                "tomorrow_checked_at",
+                "emergency_notices",
+            }
         )
         fetch.side_effect = None
         await coordinator.async_refresh()
-        assert hass.states.get(ids["now"]).state == "on"
+        assert hass.states.get(ids["outage_now"]).state == "on"
 
 
 async def test_missing_queue_loads_unavailable(hass, entry):
@@ -95,11 +104,19 @@ async def test_missing_queue_loads_unavailable(hass, entry):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
     ids = entity_ids(hass, entry)
-    assert len(ids) == 10
+    assert len(ids) == 13
     assert all(
         hass.states.get(item).state == "unavailable"
         for key, item in ids.items()
-        if key not in {"status", "update", "changed"}
+        if key
+        not in {
+            "data_status",
+            "last_successful_update",
+            "schedule_changed",
+            "today_checked_at",
+            "tomorrow_checked_at",
+            "emergency_notices",
+        }
     )
 
 
@@ -122,7 +139,7 @@ async def test_clock_boundary_without_network(hass, entry, schedule, freezer):
         freezer.move_to(boundary)
         async_fire_time_changed(hass, boundary)
         await hass.async_block_till_done()
-        assert hass.states.get(ids["now"]).state == "off"
+        assert hass.states.get(ids["outage_now"]).state == "off"
         assert fetch.call_count == calls
 
 
@@ -138,7 +155,15 @@ async def test_midnight_marks_stale(hass, entry, schedule, freezer):
         assert all(
             hass.states.get(item).state == "unavailable"
             for key, item in ids.items()
-            if key not in {"status", "update", "changed"}
+            if key
+            not in {
+                "data_status",
+                "last_successful_update",
+                "schedule_changed",
+                "today_checked_at",
+                "tomorrow_checked_at",
+                "emergency_notices",
+            }
         )
 
 
@@ -167,7 +192,7 @@ async def test_reconfigure_preserves_registry(hass, entry, schedule, directory):
         assert entity_ids(hass, entry) == ids
         assert (
             len(er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id))
-            == 10
+            == 13
         )
         assert (
             dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)[0].id
@@ -200,6 +225,7 @@ async def test_diagnostics_allowlist(hass, entry, schedule):
         "data_is_cached",
         "operator",
         "queue",
+        "emergency_notices",
         "days",
     }
     assert result["days"]["today"]["status"] == "published"
@@ -211,7 +237,7 @@ async def test_source_timezone_is_independent(hass, entry, schedule):
     with patch(FETCH, return_value=[schedule]):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
-    assert hass.states.get(entity_ids(hass, entry)["now"]).state == "on"
+    assert hass.states.get(entity_ids(hass, entry)["outage_now"]).state == "on"
 
 
 async def test_ukrainian_zero_outage_state(hass, entry, schedule):
@@ -332,4 +358,4 @@ async def test_no_shutdowns_operator_state(hass, entry, schedule):
         await hass.async_block_till_done()
     ids = entity_ids(hass, entry)
     assert hass.states.get(ids["today"]).state == "No outages"
-    assert hass.states.get(ids["now"]).state == "off"
+    assert hass.states.get(ids["outage_now"]).state == "off"

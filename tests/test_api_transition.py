@@ -257,7 +257,7 @@ async def test_snake_case_actual_entities_and_source_link(
     assert today.attributes["date"] == "2026-10-07"
     assert today.attributes["outage_type"] == "mixed"
     assert today.attributes["possible_hours"] == data["today_possible"]
-    assert len(ids) == 10
+    assert len(ids) == 13
 
 
 @pytest.mark.parametrize("value", [None, [], "", "WaitingForSchedule"])

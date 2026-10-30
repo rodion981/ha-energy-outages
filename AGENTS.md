@@ -15,6 +15,7 @@
 - `event.py`: schedule_changed з before/after/added/removed за датою; тихий startup/reload baseline, bounded snapshots у HA restore extra data, без I/O й додаткових запитів. `blueprints/automation/schedule_changes.yaml`: вибір каналу сповіщень, перевіряється справжньою HA automation у tests/test_schedule_events.py.
 - `calendar.py`: read-only CalendarEntity, незалежні published дні, shared dated_outage_periods/utc_midnight з forecast.py; краї покриття не є підтвердженим початком/відновленням. Перевіряй range overlap, midnight/DST, HTTP/get_events і lifecycle; calendar triggers мають власний цикл HA, для критичних сповіщень використовуй timestamp/event сутності.
 - `diagnostics.py`: allowlist health/public metadata; `strings.json`, `translations/en.json`, `translations/uk.json`: UI.
+- `source.py`: timezone-aware per-day checked_at and advisory today_announcements. Emergency active/possible with scope, effective/expiry times are independent of scheduled/measured power; missing/malformed/stale is unknown, explicit [] is off. One shared area boundary timer handles validity without requests and is removed on final unload. Never interpret expires_at as restoration or local scope as proof for an address; only allowlisted metadata reaches entities/diagnostics.
 - Репозиторій підтримує встановлення custom integration через HACS/UI. Приклади автоматизацій мають використовувати її фактичні entity IDs і машинні атрибути.
 - Читай обидва README, `CONTRIBUTING.md` та `CHANGELOG.md` перед змінами встановлення/поведінки.
 

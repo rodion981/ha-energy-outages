@@ -11,7 +11,10 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry, current_entry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers.event import async_track_utc_time_change
+from homeassistant.helpers.event import (
+    async_track_point_in_utc_time,
+    async_track_utc_time_change,
+)
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
@@ -29,6 +32,7 @@ from .const import (
     SCHEDULE_TIME_ZONE,
 )
 from .schedule import normalize_day
+from .source import emergency_notices
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -151,13 +155,34 @@ class AlertsEnergyAreaCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
         self._retry_seconds: float = RETRY_INTERVAL_SECONDS
         self.last_successful_update: datetime | None = None
         self._initial_lock = asyncio.Lock()
+        self._unsub_announcements: Callable[[], None] | None = None
         self._unsub_clock: Callable[[], None] | None = async_track_utc_time_change(
             hass, self._handle_clock, minute=[0, 30], second=0
         )
 
     @callback
     def _handle_clock(self, _now: datetime) -> None:
+        self._schedule_announcement_boundary(self.data or [])
         self.async_update_listeners()
+
+    @callback
+    def _schedule_announcement_boundary(self, rows: list[dict[str, Any]]) -> None:
+        """Share one advisory boundary timer per area without network I/O."""
+        if self._unsub_announcements is not None:
+            self._unsub_announcements()
+            self._unsub_announcements = None
+        if self._shutdown_requested:
+            return
+        now = dt_util.utcnow()
+        boundaries = (
+            boundary
+            for row in rows
+            for boundary in emergency_notices(row, now).boundaries
+        )
+        if (boundary := min(boundaries, default=None)) is not None:
+            self._unsub_announcements = async_track_point_in_utc_time(
+                self.hass, self._handle_clock, boundary
+            )
 
     def _schedule_refresh(self) -> None:
         """Keep the existing disable-polling preference for the shared source."""
@@ -219,12 +244,17 @@ class AlertsEnergyAreaCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
                 and (snapshot := self._api.cached_schedule(self.area)) is not None
             ):
                 self.data, self.last_successful_update = snapshot
+            self._schedule_announcement_boundary(self.data or [])
             raise UpdateFailed(str(err)) from err
         snapshot = self._api.cached_schedule(self.area)
         self.last_successful_update = snapshot[1] if snapshot else dt_util.utcnow()
+        self._schedule_announcement_boundary(rows)
         return rows
 
     async def async_shutdown(self) -> None:
+        if self._unsub_announcements is not None:
+            self._unsub_announcements()
+            self._unsub_announcements = None
         if self._unsub_clock is not None:
             self._unsub_clock()
             self._unsub_clock = None
