@@ -3,14 +3,14 @@
     "step": {
       "user": {
         "title": "Select region",
-        "description": "Choose your oblast or a city with special status from Alerts Energy.\n\nData source: [Alerts Energy](https://alerts.energy/). Free access for this integration is provided by the Alerts Energy team.",
+        "description": "Choose your oblast or a city with special status from Alerts Energy.\n\nData source: [Alerts Energy]({source_url}). Free access for this integration is provided by the Alerts Energy team.",
         "data": {
           "area": "Region / city with special status"
         }
       },
       "reconfigure": {
         "title": "Change location and queue",
-        "description": "Choose a region, settlement, operator and exact queue. Existing entity IDs are preserved after the final step.\n\nData source: [Alerts Energy](https://alerts.energy/). Free access for this integration is provided by the Alerts Energy team.",
+        "description": "Choose a region, settlement, operator and exact queue. Existing entity IDs are preserved after the final step.\n\nData source: [Alerts Energy]({source_url}). Free access for this integration is provided by the Alerts Energy team.",
         "data": {
           "area": "Region / city with special status"
         }

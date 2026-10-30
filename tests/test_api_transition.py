@@ -344,6 +344,7 @@ async def test_real_flow_and_setup_reuse_queue_discovery(
     hass, directory, aioclient_mock
 ):
     form = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    assert form["description_placeholders"]["source_url"] == "https://alerts.energy"
     form = await hass.config_entries.flow.async_configure(
         form["flow_id"], {"area": "kyiv"}
     )
@@ -410,6 +411,6 @@ def test_area_selection_links_to_data_source(language):
     )
     for step in ("user", "reconfigure"):
         assert (
-            "[Alerts Energy](https://alerts.energy/)"
+            "[Alerts Energy]({source_url})"
             in data["config"]["step"][step]["description"]
         )

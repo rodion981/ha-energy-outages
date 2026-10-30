@@ -29,6 +29,7 @@ from .const import (
     DOMAIN,
     MAX_SCAN_INTERVAL_MINUTES,
     MIN_SCAN_INTERVAL_MINUTES,
+    SITE_URL,
 )
 
 SKIP_LOCALITY = "__skip__"
@@ -150,6 +151,7 @@ class AlertsEnergyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type:
             step_id=step_id,
             data_schema=schema if choices else vol.Schema({}),
             errors=errors,
+            description_placeholders={"source_url": SITE_URL},
         )
 
     async def async_step_locality(
