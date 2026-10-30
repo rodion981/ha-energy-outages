@@ -3,11 +3,54 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from typing import Any, TypeGuard
+
+from .const import SCHEDULE_TIME_ZONE
 
 # Convert source codes to first/second-half bits before taking the union.
 _MASKS = (0, 3, 1, 2)
 _CODES = (0, 2, 3, 1)
+
+
+def align_schedule_dates(data: dict[str, Any], now: datetime) -> dict[str, Any]:
+    """Select day fields by their source date without changing the cached row."""
+    result = dict(data)
+    today = now.astimezone(SCHEDULE_TIME_ZONE).date()
+    for target in ("today", "tomorrow"):
+        expected = (today + timedelta(days=target == "tomorrow")).isoformat()
+        # Prefer the field of the requested day if both source dates match.
+        # A malformed/empty authoritative day must never be hidden by a fallback.
+        other = "tomorrow" if target == "today" else "today"
+        source = next(
+            (
+                candidate
+                for candidate in (target, other)
+                if data.get(f"{candidate}Date") == expected
+            ),
+            target,
+        )
+        if source == target:
+            continue
+        for suffix in (
+            "",
+            "Date",
+            "Status",
+            "Possible",
+            "_date",
+            "_status",
+            "_possible",
+            "_checked_at",
+            "_published_schedule",
+        ):
+            if f"{source}{suffix}" in data:
+                result[f"{target}{suffix}"] = data[f"{source}{suffix}"]
+            else:
+                result.pop(f"{target}{suffix}", None)
+        if target == "today":
+            # The API supplies notices only for its original today, not tomorrow.
+            result.pop("today_announcements", None)
+    return result
 
 
 def _valid_hours(value: object) -> TypeGuard[list[int]]:

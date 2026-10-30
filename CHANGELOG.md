@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.7.1 (2026-10-31)
+
+- Use the matching source date after Kyiv midnight so an already published tomorrow schedule remains usable as today, including cached/offline startup, forecasts, calendar and source checks. Preserve source dates, request limits, health timestamps and emergency validation; never carry yesterday's announcements forward.
+- Add a mobile dashboard YAML example inspired by the owner's outage view, with explicit schedule/measured-power separation, planned/possible bars and source freshness. Requires custom:button-card, with entity IDs configured in one place.
+- Після півночі за Києвом використовується графік із відповідною датою: вже опубліковане «завтра» залишається доступним як «сьогодні», включно з кешем/offline startup, прогнозами, календарем і часом перевірки джерелом. Дати джерела, ліміти запитів, час отримання й перевірки аварійних даних збережено; учорашні повідомлення не переносяться.
+- Додано YAML-приклад мобільної картки за ідеєю панелі власника: розділення графіка й виміряного живлення, шкали планових/можливих інтервалів та свіжість даних. Потрібен custom:button-card; entity IDs налаштовуються в одному місці.
+
 ## v2.7.0 (2026-10-30)
 
 - Add advisory emergency notices and per-day source-check timestamps from the existing regional response, with scoped metadata, local effective/expiry transitions and truthful cached/unknown states. Preserve scheduled forecasts, calendar, polling limits and entity identities.

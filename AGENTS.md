@@ -10,6 +10,7 @@
 - `__init__.py`: first refresh, platform setup/unload, entry adapters у `hass.data`, shared area pool у DATA_AREAS; ref-counted acquire/release та cleanup на setup failure/unload.
 - `coordinator.py`: один area poller (типово 15 хв) + half-hour clock; найкоротший scan_interval у хвилинах серед активних entry contexts з увімкненим polling. Options flow: 15..1440 цілих хв; update listener переплановує без reload. Не прив’язуй shared source до першого ConfigEntry; зберігай pref_disable_polling та cleanup listener на unload.
 - `forecast.py`: UTC half-hour timeline із Kyiv wall codes, DST, поточний/наступний період, невідомий кінець на краю published horizon.
+- `schedule.align_schedule_dates`: per-entry date view on every source/clock update; reuse a matching source day after Kyiv midnight without altering raw cache/dates or health timestamps. Preserve invalid/emergency statuses, move Possible/checked_at with their day, and never carry yesterday's today_announcements into the new day. Prefer the original target field on duplicate dates.
 - `schedule.py`: normalize_day/DaySchedule, валідовані planned+Possible та union півгодин (не numeric max). Усі платформи використовують combined для планування; raw hours незмінний, окремі planned/possible_periods і outage_type. Зміни класифікації також є подіями; restore приймає старі list і нові двомасивні snapshots. Контракт і recorded fixtures: docs/POSSIBLE_OUTAGES.md, tests/test_possible.py.
 - `sensor.py`, `binary_sensor.py`: незалежна availability днів, union планових/можливих інтервалів і явний outage_type; entity properties без I/O.
 - `event.py`: schedule_changed з before/after/added/removed за датою; тихий startup/reload baseline, bounded snapshots у HA restore extra data, без I/O й додаткових запитів. `blueprints/automation/schedule_changes.yaml`: вибір каналу сповіщень, перевіряється справжньою HA automation у tests/test_schedule_events.py.
@@ -17,6 +18,7 @@
 - `diagnostics.py`: allowlist health/public metadata; `strings.json`, `translations/en.json`, `translations/uk.json`: UI.
 - `source.py`: timezone-aware per-day checked_at and advisory today_announcements. Emergency active/possible with scope, effective/expiry times are independent of scheduled/measured power; missing/malformed/stale is unknown, explicit [] is off. One shared area boundary timer handles validity without requests and is removed on final unload. Never interpret expires_at as restoration or local scope as proof for an address; only allowlisted metadata reaches entities/diagnostics.
 - Репозиторій підтримує встановлення custom integration через HACS/UI. Приклади автоматизацій мають використовувати її фактичні entity IDs і машинні атрибути.
+- `examples/outage-card.yaml`: standalone custom:button-card example; IDs are configured in variables, measured power is optional and separate from schedule status. No extra API calls/ticking counters. Validate example YAML with scripts/validate.py.
 - Читай обидва README, `CONTRIBUTING.md` та `CHANGELOG.md` перед змінами встановлення/поведінки.
 
 ## Стиль і перевірки

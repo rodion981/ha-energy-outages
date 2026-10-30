@@ -143,7 +143,8 @@ async def test_clock_boundary_without_network(hass, entry, schedule, freezer):
         assert fetch.call_count == calls
 
 
-async def test_midnight_marks_stale(hass, entry, schedule, freezer):
+async def test_midnight_marks_stale_without_next_day(hass, entry, schedule, freezer):
+    schedule["tomorrow"] = []
     with patch(FETCH, return_value=[schedule]):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()

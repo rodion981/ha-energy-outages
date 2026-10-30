@@ -34,6 +34,8 @@ def main() -> None:
         for path in (ROOT / ".github").rglob(pattern):
             yaml.safe_load(path.read_text(encoding="utf-8"))
     yaml.safe_load((ROOT / ".pre-commit-config.yaml").read_text(encoding="utf-8"))
+    for path in (ROOT / "examples").glob("*.yaml"):
+        yaml.safe_load(path.read_text(encoding="utf-8"))
     manifest = json.loads((INTEGRATION / "manifest.json").read_text(encoding="utf-8"))
     assert list(manifest) == [
         "domain",

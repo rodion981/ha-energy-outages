@@ -219,7 +219,7 @@ async def test_persisted_cache_starts_offline_with_truthful_health(
     assert aioclient_mock.call_count == 1
 
 
-async def test_persisted_cache_date_expiry_and_new_emergency_replace_old(
+async def test_persisted_emergency_expires_but_dated_next_day_remains_usable(
     hass, aioclient_mock, entry, schedule, freezer
 ):
     aioclient_mock.get(API_URL, json=[wire(schedule)])
@@ -241,7 +241,11 @@ async def test_persisted_cache_date_expiry_and_new_emergency_replace_old(
     await tick(hass, freezer, 86400)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    assert hass.states.get(ids["today"]).state == "unavailable"
+    today = hass.states.get(ids["today"])
+    assert today.state == "No outages"
+    assert today.attributes["date"] == "2026-10-08"
+    assert today.attributes["source_status"] == "ScheduleApplies"
+    assert today.attributes["data_is_cached"] is True
 
 
 async def test_snake_case_actual_entities_and_source_link(

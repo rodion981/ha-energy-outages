@@ -115,6 +115,7 @@ async def test_recovery_preserves_configured_interval(
 async def test_cached_clock_updates_and_date_expiry_with_polling_disabled(
     hass, entry, schedule, freezer
 ):
+    schedule["tomorrow"] = []
     hass.config_entries.async_update_entry(entry, pref_disable_polling=True)
     with patch(FETCH, return_value=[schedule]) as fetch:
         assert await hass.config_entries.async_setup(entry.entry_id)
